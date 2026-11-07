@@ -1,6 +1,6 @@
 # latest.py
 import re
-from acaps_client import fetch_risks
+from acaps_client import fetch_risks, CACHE_DIR
 
 UPDATE_RE = re.compile(r"(?i)update (\d{2}/\d{2}/\d{4})\s*(.*?)(?=update \d{2}/\d{2}/\d{4}|\Z)", re.S)
 LINK_RE = re.compile(r"\[([^\]]+)\]\([^)]*\)")  # [Reuters 25/09/2026](url) -> Reuters 25/09/2026
@@ -47,10 +47,13 @@ def format_context(risk: dict) -> str:
         parts.append(ctx["background"])
     for update in reversed(updates):  # oldest -> newest, so the story reads chronologically
         parts.append(f"Update {update['date']}: {update['text']}" if update["date"] else update["text"])
-    return "\n\n".join(parts)
+    formatted = "\n\n".join(parts)
+    cache_file = CACHE_DIR / f"formatted_context_{ctx['risk_id']}_{last_date.replace('/', '-') if last_date else 'no-date'}.txt"
+    with open(cache_file, "w", encoding="utf-8") as f:
+        f.write(formatted)
+    return formatted
 
 
 if __name__ == "__main__":
     risks = fetch_risks(use_cache=True, risk_id="R1011", ordering="-last_risk_update")
-    if risks:
-        print(format_context(risks[0]))
+    _ = format_context(risks[0])
