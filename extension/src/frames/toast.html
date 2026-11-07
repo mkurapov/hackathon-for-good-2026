@@ -7,20 +7,21 @@
 <style>
   /* Room for the shadow (0 6px 20px) and the 14px rise of the fade. */
   body { padding: 16px 24px 34px; }
-  .toast { width: 320px; background: #fff; border-radius: 6px; box-shadow: 0 6px 20px rgba(0,0,0,.25); overflow: hidden; border-top: 4px solid var(--navy); }
+  .toast { width: 336px; background: #fff; border-radius: 6px; box-shadow: 0 6px 20px rgba(0,0,0,.25); overflow: hidden; border-top: 4px solid var(--navy); }
   /* Fades in while rising slightly, and fades out when dismissed. */
   .toast { opacity: 0; transform: translateY(14px); transition: opacity .7s ease-out, transform .7s ease-out; }
   .toast.shown { opacity: 1; transform: none; }
   .toast.leaving { opacity: 0; transform: translateY(8px); transition-duration: .3s; }
   @media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
   .t-head { display: flex; align-items: center; gap: 8px; padding: 10px 12px 0; }
-  .t-head .logo { height: 22px; }
-  .t-body { padding: 6px 12px 12px; font-size: 14px; }
+  .t-head .logo { height: 24px; }
+  .t-body { padding: 6px 12px 12px; font-size: 15px; }
   .t-actions { display: flex; gap: 6px; margin-top: 10px; }
+  .t-actions .btn { font-size: 14px; }
   .t-actions > * { flex: 1; }
-  .t-more { display: flex; gap: 14px; margin-top: 10px; font-size: 14px; }
-  .close { margin-left: auto; background: none; border: 0; font-size: 20px; color: var(--muted); cursor: pointer; line-height: 1; padding: 0 2px; }
-  .chip { margin: 0; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .t-more { display: flex; gap: 14px; margin-top: 10px; font-size: 15px; }
+  .close { margin-left: auto; background: none; border: 0; font-size: 22px; color: var(--muted); cursor: pointer; line-height: 1; padding: 0 2px; }
+  .chip { margin: 0; font-size: 13px; max-width: 210px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 </style>
 </head>
 <body>

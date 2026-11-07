@@ -78,7 +78,7 @@
     if (toast) return;
     // The frame includes clear space for the card's shadow (see toast.html), so it sits past the
     // corner a little: the card itself ends up 20px from the edges.
-    toast = frame('toast.html', { position: 'fixed', right: '-4px', bottom: '-14px', width: '368px', height: '210px' });
+    toast = frame('toast.html', { position: 'fixed', right: '-4px', bottom: '-14px', width: '384px', height: '220px' });
   }
 
   function openPanel(view, focus) {
@@ -111,7 +111,7 @@
       const node = sel.anchorNode?.nodeType === 1 ? sel.anchorNode : sel.anchorNode?.parentElement;
       if (node?.closest('input, textarea, [contenteditable=""], [contenteditable="true"]')) return hideBar();
       range = sel.getRangeAt(0).cloneRange();
-      if (!bar) bar = frame('selbar.html', { position: 'absolute', width: '280px', height: '64px', left: '0', top: '0' });
+      if (!bar) bar = frame('selbar.html', { position: 'absolute', width: '340px', height: '74px', left: '0', top: '0' });
       bar.style.visibility = 'visible';
       positionBar();
     }, 0);
@@ -128,8 +128,8 @@
     // Centre the card on the selection and keep it on screen; the shadow space may go past the edge.
     const left = Math.min(Math.max(8 - BAR_PAD.side, r.left + r.width / 2 - w / 2),
       document.documentElement.clientWidth - w + BAR_PAD.side - 8);
-    // The card's bottom (not the frame's) sits 4px above the selection.
-    const top = Math.max(4, r.top - (h - BAR_PAD.bottom) - 4);
+    // The card's bottom (not the frame's) sits 10px above the selection.
+    const top = Math.max(4, r.top - (h - BAR_PAD.bottom) - 10);
     bar.style.left = window.scrollX + left + 'px';
     bar.style.top = window.scrollY + top + 'px';
   }

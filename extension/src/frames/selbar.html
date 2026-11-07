@@ -9,15 +9,16 @@
   body { padding: 8px 12px 14px; }
   /* Stacked as blocks (not inline), so the tag sits flush on the bar with no line-height gap. */
   .wrap { display: flex; flex-direction: column; align-items: flex-start; filter: drop-shadow(0 3px 6px rgba(0,0,0,.25)); }
-  .tag { display: block; background: var(--navy); padding: 4px 5px 2px; border-radius: 3px 3px 0 0; line-height: 0; }
-  .tag .logo { display: block; height: 18px; }
-  .row { display: flex; gap: 4px; background: var(--navy); padding: 4px; border-radius: 0 4px 4px 4px; white-space: nowrap; }
-  .row button { font-weight: 700; font-size: 13px; border-radius: 3px; padding: 5px 10px; cursor: pointer; color: #fff; }
+  /* Spans the full width of the button row. */
+  .tag { display: block; align-self: stretch; background: var(--navy); padding: 3px 6px 1px; border-radius: 4px 4px 0 0; line-height: 0; }
+  .tag .logo { display: block; height: 17px; }
+  .row { display: flex; gap: 5px; background: var(--navy); padding: 4px; border-radius: 0 0 4px 4px; white-space: nowrap; }
+  .row button { font-weight: 700; font-size: 16px; border-radius: 3px; padding: 7px 13px; cursor: pointer; color: #fff; }
   .agree { background: var(--green); border: 1px solid var(--green); }
   .agree:hover { background: #4b8543; }
   .disagree { background: var(--red); border: 1px solid var(--red); }
   .disagree:hover { background: #b93232; }
-  .comment { background: transparent; border: 2px solid #fff; padding: 4px 10px !important; }
+  .comment { background: transparent; border: 2px solid #fff; padding: 6px 13px !important; }
   .comment:hover { background: rgba(255,255,255,.15); }
 </style>
 </head>
