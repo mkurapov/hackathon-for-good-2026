@@ -58,6 +58,7 @@ flowchart TD
 | `latest.py` | Turns a risk into a compact LLM context: 3 most recent updates, or rationale + updates if there are fewer than 3. Strips citation links | `render_context` produces the text | |
 | `questions.py` | Prompt, LLM call, JSON extraction/validation, retries. Assigns question IDs (`L1`-`L5`, `B1`-`B5`) and `survey_id`. Returns a `Survey` matching the OpenAPI schema | Token budget: 3 updates, falls back to 1 | |
 | `db.py` | SQLite storage: groups, experts, surveys, responses, notes, article comments | Expert tokens are stored hashed | |
+| `seed_demo.py` | Creates a demo group (invite code `DEMO-VEN-2026`) and survey, without the LLM, for trying the extension | `--reset` removes demo experts and answers | |
 | `daily_job.py` | Orchestrator. For each risk a group tracks: skip if the survey for the latest update exists, skip closed risks, otherwise generate and save | One failing risk does not stop the others | |
 | `api.py` | FastAPI app; authentication, request validation, and API routes backed by SQLite | Article matching currently checks exact risk-ID/title text matches | |
 | `openapi.yaml` | API contract | Assumptions are marked in the file | |
@@ -85,13 +86,17 @@ flowchart TD
 | Method and path | Purpose |
 |---|---|
 | `POST /groups` | Create a group linked to a `risk_id` (analyst key) |
+| `GET /invites/{invite_code}` | Preview the group and risk an invite belongs to, before registering |
+| `GET /join?code=` | Invite landing page; the extension reads the code from it |
 | `POST /experts` | Register an expert with an invite code, choose anonymity level, receive a token |
+| `GET /experts/me` | The expert's profile, including the group and risk they follow |
 | `PATCH /experts/me` | Change anonymity level, language or channel |
 | `GET /experts/{expert_id}/surveys/current` | Outstanding survey, or `204` |
 | `PUT /experts/{expert_id}/surveys/{survey_id}/responses` | Save answers (draft or submitted) |
 | `POST /notes` | Unstructured input |
 | `POST /articles/match` | Does an article contain a tracked risk ID or title? |
-| `POST /articles/comments` | Store an expert comment for a matched risk/article |
+| `POST /articles/comments` | Store an expert comment, Agree / Disagree, or highlighted passage for a matched risk/article |
+| `POST /contact-requests` | The expert asks ACAPS to get in touch |
 
 ## Design decisions
 
@@ -125,9 +130,19 @@ python daily_job.py --risk R1043     # one risk, no group needed (demo)
 python daily_job.py                  # every risk a registered group tracks
 python daily_job.py --force          # regenerate existing surveys
 
-# start the API
+# start the API (without Docker)
 uvicorn api:app --app-dir backend --reload --env-file .env
 ```
+
+Or run the API in Docker from the repo root. `docker-compose.yml` builds `backend/Dockerfile`, loads `.env` if present, and keeps the database in the `groundtruth-data` volume:
+
+```bash
+docker compose up -d --build
+docker compose exec api python seed_demo.py
+docker compose exec api python daily_job.py --risk R1043
+```
+
+Inside the container, `localhost` is the container itself. Point `LLM_BASE_URL` at `http://host.docker.internal:1234/api/v1` to reach LM Studio on the host.
 
 ## Open questions
 

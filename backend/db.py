@@ -65,9 +65,33 @@ CREATE TABLE IF NOT EXISTS article_comments (
     url         TEXT NOT NULL,
     risk_id     TEXT NOT NULL,
     text        TEXT NOT NULL,
+    stance      TEXT,                        -- agree | disagree | NULL
+    quote       TEXT,                        -- highlighted passage, if the comment is about one
+    created_at  TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS contact_requests (
+    request_id  TEXT PRIMARY KEY,
+    expert_id   TEXT NOT NULL REFERENCES experts(expert_id),
+    note        TEXT,
     created_at  TEXT NOT NULL
 );
 """
+
+# Columns added after the first release. CREATE TABLE IF NOT EXISTS does not add them to
+# databases that already exist, so connect() adds any that are missing.
+ADDED_COLUMNS = {
+    "article_comments": {"stance": "TEXT", "quote": "TEXT"},
+}
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    for table, columns in ADDED_COLUMNS.items():
+        existing = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
+        for column, column_type in columns.items():
+            if column not in existing:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {column_type}")
+    conn.commit()
 
 
 @contextmanager
@@ -76,6 +100,7 @@ def connect() -> Iterator[sqlite3.Connection]:
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     conn.executescript(SCHEMA)
+    _migrate(conn)
     try:
         yield conn
     finally:
