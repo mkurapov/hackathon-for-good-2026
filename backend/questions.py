@@ -140,7 +140,7 @@ def call_llm(messages: list[dict], temperature: float = 0.3, timeout: int = 300)
             for message in messages
         ),
         "context_length": 8000,
-        "reasoning": "off",
+        #"reasoning": "on",
         "temperature": temperature,
         "max_output_tokens": 1500,
     }

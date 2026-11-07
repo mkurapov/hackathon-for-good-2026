@@ -272,7 +272,7 @@ def get_current_survey(
     with db.connect() as conn:
         group = conn.execute("SELECT risk_id FROM groups WHERE group_id = ?", (expert["group_id"],)).fetchone()
         survey = conn.execute(
-            """SELECT survey_id, payload FROM surveys
+            """SELECT survey_id, risk_id, risk_title, based_on_update, generated_at, payload FROM surveys
                WHERE risk_id = ? ORDER BY generated_at DESC LIMIT 1""",
             (group["risk_id"],),
         ).fetchone()
@@ -284,10 +284,13 @@ def get_current_survey(
                WHERE survey_id = ? AND expert_id = ? AND status = 'submitted'""",
             (survey["survey_id"], expert_id),
         ).fetchone()
+        if submitted is None:
+            payload = json.loads(survey["payload"])
+            payload.update(db.survey_questions(conn, survey["survey_id"]))
     if submitted is not None:
         response.status_code = status.HTTP_204_NO_CONTENT
         return None
-    return json.loads(survey["payload"])
+    return payload
 
 
 @app.put(
@@ -323,9 +326,9 @@ def put_survey_response(
         if existing is not None and existing["status"] == "submitted":
             raise HTTPException(status_code=409, detail="Response was already submitted")
 
-        survey_payload = json.loads(survey["payload"])
-        likert_ids = {question["id"] for question in survey_payload["likert"]}
-        binary_ids = {question["id"] for question in survey_payload["binary"]}
+        survey_questions = db.survey_questions(conn, survey_id)
+        likert_ids = {question["id"] for question in survey_questions["likert"]}
+        binary_ids = {question["id"] for question in survey_questions["binary"]}
         if any(answer.question_id not in likert_ids for answer in body.likert):
             raise HTTPException(status_code=422, detail="Unknown Likert question ID")
         if any(answer.question_id not in binary_ids for answer in body.binary):
