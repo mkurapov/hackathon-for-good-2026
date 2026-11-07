@@ -1,30 +1,27 @@
 const riskSelect = document.querySelector("#risk-code-select");
 const state = {
-  riskCode: riskSelect.value,
+  riskCode: "R-1062",
   activeView: "overview",
   typeFilter: "all",
   statusFilter: "all",
   feedbackStatus: "all",
   feedbackCode: "all",
   recipientType: "all",
+  editingQuestions: false,
+  basedOnUpdate: "",
   experts: [
-    { id: "e-01", type: "A", name: "Dr. Leila Haddad", subtitle: "Long-term expert", invite: "AC-7F2K-91", used: true, status: "Responded", activity: "Today, 09:42", riskCode: "R-0427" },
-    { id: "e-02", type: "A", name: "M. Okafor", subtitle: "Long-term expert", invite: "AC-3M8Q-14", used: true, status: "Awaiting response", activity: "Yesterday", riskCode: "R-0427" },
-    { id: "e-03", type: "B", name: "Field contributor 08", subtitle: "Opaque handle", invite: "AC-9P1D-62", used: true, status: "Onboarded", activity: "2 days ago", riskCode: "R-0427" },
-    { id: "e-04", type: "A", name: "Samira N.", subtitle: "Long-term expert", invite: "AC-5J6R-33", used: false, status: "Invited", activity: "3 days ago", riskCode: "R-0427" },
-    { id: "e-05", type: "B", name: "Field contributor 12", subtitle: "Opaque handle", invite: "AC-2W4B-08", used: true, status: "Awaiting response", activity: "4 days ago", riskCode: "R-0427" },
-    { id: "e-06", type: "A", name: "R. Mensah", subtitle: "Long-term expert", invite: "AC-8L2C-75", used: true, status: "Responded", activity: "5 days ago", riskCode: "R-0427" },
-    { id: "e-07", type: "A", name: "Nadia K.", subtitle: "Long-term expert", invite: "AC-4H7N-20", used: false, status: "Invited", activity: "1 week ago", riskCode: "R-0427" },
-    { id: "e-08", type: "B", name: "Field contributor 19", subtitle: "Opaque handle", invite: "AC-6D3T-57", used: true, status: "Onboarded", activity: "1 week ago", riskCode: "R-0427" },
-    { id: "e-09", type: "A", name: "Dr. Peter Osei", subtitle: "Long-term expert", invite: "AC-1N9F-48", used: true, status: "Awaiting response", activity: "2 weeks ago", riskCode: "R-0183" },
-    { id: "e-10", type: "B", name: "Field contributor 03", subtitle: "Opaque handle", invite: "AC-7A5E-11", used: false, status: "Invited", activity: "2 weeks ago", riskCode: "R-0183" },
-    { id: "e-11", type: "A", name: "T. Mwangi", subtitle: "Long-term expert", invite: "AC-9C2K-86", used: true, status: "Onboarded", activity: "Yesterday", riskCode: "R-0183" },
-    { id: "e-12", type: "A", name: "H. Saleh", subtitle: "Long-term expert", invite: "AC-6B4M-39", used: false, status: "Invited", activity: "4 days ago", riskCode: "R-1102" }
-  ],
-  approvals: [
-    { id: "a-01", handle: "Field contributor 24", arrived: "Today, 08:24", eventId: "EVT-27-NORTH", screening: "Community health volunteer · Central district", riskCode: "R-0427" },
-    { id: "a-02", handle: "Field contributor 25", arrived: "Yesterday, 16:10", eventId: "New identifier", screening: "Local market association · East district", riskCode: "R-0427" },
-    { id: "a-03", handle: "Field contributor 31", arrived: "Yesterday, 11:35", eventId: "EVT-27-NORTH", screening: "Displacement response volunteer · North district", riskCode: "R-0427" }
+    { id: "e-01", type: "A", name: "Dr. Leila Haddad", subtitle: "Long-term expert", invite: "AC-7F2K-91", used: true, status: "Responded", activity: "Today, 09:42", riskCode: "R-1062" },
+    { id: "e-02", type: "A", name: "M. Okafor", subtitle: "Long-term expert", invite: "AC-3M8Q-14", used: true, status: "Awaiting response", activity: "Yesterday", riskCode: "R-1062" },
+    { id: "e-03", type: "B", name: "Field contributor 08", subtitle: "Opaque handle", invite: "AC-9P1D-62", used: true, status: "Onboarded", activity: "2 days ago", riskCode: "R-1062" },
+    { id: "e-04", type: "A", name: "Samira N.", subtitle: "Long-term expert", invite: "AC-5J6R-33", used: false, status: "Invited", activity: "3 days ago", riskCode: "R-1062" },
+    { id: "e-05", type: "B", name: "Field contributor 12", subtitle: "Opaque handle", invite: "AC-2W4B-08", used: true, status: "Awaiting response", activity: "4 days ago", riskCode: "R-1062" },
+    { id: "e-06", type: "A", name: "R. Mensah", subtitle: "Long-term expert", invite: "AC-8L2C-75", used: true, status: "Responded", activity: "5 days ago", riskCode: "R-1062" },
+    { id: "e-07", type: "A", name: "Nadia K.", subtitle: "Long-term expert", invite: "AC-4H7N-20", used: false, status: "Invited", activity: "1 week ago", riskCode: "R-1062" },
+    { id: "e-08", type: "B", name: "Field contributor 19", subtitle: "Opaque handle", invite: "AC-6D3T-57", used: true, status: "Onboarded", activity: "1 week ago", riskCode: "R-1062" },
+    { id: "e-09", type: "A", name: "Dr. Peter Osei", subtitle: "Long-term expert", invite: "AC-1N9F-48", used: true, status: "Awaiting response", activity: "2 weeks ago", riskCode: "R-1015" },
+    { id: "e-10", type: "B", name: "Field contributor 03", subtitle: "Opaque handle", invite: "AC-7A5E-11", used: false, status: "Invited", activity: "2 weeks ago", riskCode: "R-1015" },
+    { id: "e-11", type: "A", name: "T. Mwangi", subtitle: "Long-term expert", invite: "AC-9C2K-86", used: true, status: "Onboarded", activity: "Yesterday", riskCode: "R-1015" },
+    { id: "e-12", type: "A", name: "H. Saleh", subtitle: "Long-term expert", invite: "AC-6B4M-39", used: false, status: "Invited", activity: "4 days ago", riskCode: "R-1020" }
   ],
   surveyStatus: "Draft",
   questions: [
@@ -40,20 +37,134 @@ const state = {
     { kind: "Binary", text: "Are local authorities currently responding to the reported access constraints?" }
   ],
   submissions: [
-    { id: "s-01", handle: "Field contributor 19", type: "B", date: "Today, 10:18", body: "The eastern road has been intermittently blocked since Monday. Community members are taking the river route, but transport costs have increased sharply.", tags: ["Access", "Transport"], riskCode: "R-0427", status: "unreviewed" },
-    { id: "s-02", handle: "Dr. Leila Haddad", type: "A", date: "Today, 08:52", body: "Two clinics in the central area report that deliveries of trauma kits have not arrived this week. They have enough stock for several days, but no confirmed replenishment date.", tags: ["Health", "Supplies"], riskCode: "R-0427", status: "unreviewed" },
+    { id: "s-01", handle: "Field contributor 19", type: "B", date: "Today, 10:18", body: "The eastern road has been intermittently blocked since Monday. Community members are taking the river route, but transport costs have increased sharply.", tags: ["Access", "Transport"], riskCode: "R-1062", status: "unreviewed" },
+    { id: "s-02", handle: "Dr. Leila Haddad", type: "A", date: "Today, 08:52", body: "Two clinics in the central area report that deliveries of trauma kits have not arrived this week. They have enough stock for several days, but no confirmed replenishment date.", tags: ["Health", "Supplies"], riskCode: "R-1062", status: "unreviewed" },
     { id: "s-03", handle: "Field contributor 08", type: "B", date: "Yesterday, 17:26", body: "Families from three nearby villages are staying with relatives near the market. I have not seen a formal site open yet.", tags: ["Displacement"], riskCode: null, status: "unreviewed" },
-    { id: "s-04", handle: "M. Okafor", type: "A", date: "Yesterday, 14:03", body: "Local traders expect food prices to rise if the northern checkpoint remains closed through the end of the month.", tags: ["Markets"], riskCode: "R-0183", status: "reviewed" }
+    { id: "s-04", handle: "M. Okafor", type: "A", date: "Yesterday, 14:03", body: "Local traders expect food prices to rise if the northern checkpoint remains closed through the end of the month.", tags: ["Markets"], riskCode: "R-1015", status: "reviewed" }
   ],
   notifications: []
 };
 
+const expertiseSamples = ["Economy", "Displacement", "Humanitarian Aid", "Women's Rights", "Conflict"];
+let riskCatalogue = [];
+
+state.experts.forEach((expert, index) => {
+  expert.internalAlias = expert.type === "B" ? expert.name.replace("Field contributor", "FC") : expert.name;
+  expert.crossCommunityIdentifier = expert.type === "B" ? `opaque-${String(index + 8).padStart(2, "0")}` : `LT-${String(index + 1048).padStart(4, "0")}`;
+  expert.expertise = [expertiseSamples[index % expertiseSamples.length], expertiseSamples[(index + 2) % expertiseSamples.length]];
+  expert.riskCodes = [expert.riskCode];
+});
+state.experts[0].riskCodes.push("R-1015");
+state.experts[4].riskCodes.push("R-1020");
+
 const statusClass = { Invited: "status-invited", Onboarded: "status-onboarded", "Awaiting response": "status-awaiting", Responded: "status-responded" };
 const initialsFor = (name) => name.split(/\s+/).filter(Boolean).map((part) => part[0]).slice(0, 2).join("").toUpperCase();
 const escapeHTML = (value) => String(value).replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
+const displayRiskCode = (sourceId) => sourceId.replace(/^(R)(\d{4})$/, "$1-$2");
+const sourceRiskId = (riskCode) => riskCode.replace(/-/, "");
+
+function parseCSV(text) {
+  const rows = [];
+  let row = [];
+  let field = "";
+  let quoted = false;
+  for (let index = 0; index < text.length; index += 1) {
+    const character = text[index];
+    if (character === '"' && quoted && text[index + 1] === '"') { field += '"'; index += 1; }
+    else if (character === '"') quoted = !quoted;
+    else if (character === "," && !quoted) { row.push(field); field = ""; }
+    else if ((character === "\n" || character === "\r") && !quoted) {
+      if (character === "\r" && text[index + 1] === "\n") index += 1;
+      row.push(field); field = "";
+      if (row.some((cell) => cell.trim())) rows.push(row);
+      row = [];
+    } else field += character;
+  }
+  row.push(field);
+  if (row.some((cell) => cell.trim())) rows.push(row);
+  return rows;
+}
+
+function latestReportUpdate(text) {
+  const match = text.match(/\bUPDATE\s+(\d{2}\/\d{2}\/\d{4})/i);
+  return match?.[1] || "Update date unavailable";
+}
+
+function riskRecordFromRow(headers, values) {
+  const record = Object.fromEntries(headers.map((header, index) => [header.trim(), values[index]?.trim() || ""]));
+  if (!/^R\d{4}$/.test(record["Risk ID"])) return null;
+  const countries = record.Country.split(",").map((name) => name.trim()).filter(Boolean);
+  return {
+    id: record["Risk ID"],
+    code: displayRiskCode(record["Risk ID"]),
+    title: record["Risk Title"],
+    countries: countries.length ? countries : ["Unassigned"],
+    level: record["Risk Level"] || "Not rated",
+    trend: record["Risk trend"] || "No trend recorded",
+    summary: (record["Rationale update"] || record.Rationale || record["Risk Title"] || "").replace(/\s+/g, " ").slice(0, 620),
+    basedOnUpdate: latestReportUpdate(record["Rationale update"] || "")
+  };
+}
+
+async function loadRiskCatalogue() {
+  const response = await fetch("risk-radar-export.csv");
+  if (!response.ok) throw new Error(`Catalogue request failed (${response.status})`);
+  const rows = parseCSV(await response.text());
+  const headers = (rows.shift() || []).map((header, index) => index === 0 ? header.replace(/^\uFEFF/, "") : header);
+  riskCatalogue = rows.map((row) => riskRecordFromRow(headers, row)).filter(Boolean);
+  if (!riskCatalogue.length) throw new Error("No risk profiles were found in the export");
+
+  const countrySelect = document.querySelector("#country-select");
+  const countries = [...new Set(riskCatalogue.flatMap((risk) => risk.countries))].sort((a, b) => a.localeCompare(b));
+  countrySelect.innerHTML = countries.map((country) => `<option>${escapeHTML(country)}</option>`).join("");
+  document.querySelector("#feedback-code-filter").innerHTML = `<option value="all">All Risk Codes</option>${riskCatalogue.map((risk) => `<option value="${escapeHTML(risk.code)}">${escapeHTML(risk.code)}</option>`).join("")}<option value="unlinked">Unlinked</option>`;
+  const preferredRisk = riskCatalogue.find((risk) => risk.code === state.riskCode) || riskCatalogue.find((risk) => risk.id === "R1062") || riskCatalogue[0];
+  state.riskCode = preferredRisk.code;
+  countrySelect.value = preferredRisk.countries[0];
+  populateRiskSelect(preferredRisk.code);
+  document.querySelector("#country-select").addEventListener("change", () => populateRiskSelect());
+  riskSelect.addEventListener("change", () => {
+    state.riskCode = riskSelect.value;
+    updateSelectedRisk();
+    renderAll();
+    showToast(`Risk profile switched to ${state.riskCode}`);
+  });
+  updateSelectedRisk();
+}
+
+function populateRiskSelect(selectedCode) {
+  const selectedCountry = document.querySelector("#country-select").value;
+  const countryRisks = riskCatalogue.filter((risk) => risk.countries.includes(selectedCountry));
+  riskSelect.innerHTML = countryRisks.map((risk) => `<option value="${escapeHTML(risk.code)}">${escapeHTML(risk.code)}</option>`).join("");
+  riskSelect.value = countryRisks.some((risk) => risk.code === selectedCode) ? selectedCode : countryRisks[0]?.code || "";
+  state.riskCode = riskSelect.value;
+  updateSelectedRisk();
+  renderAll();
+}
+
+function selectedRisk() {
+  return riskCatalogue.find((risk) => risk.code === state.riskCode);
+}
+
+function updateSelectedRisk() {
+  const risk = selectedRisk();
+  if (!risk) return;
+  if (!risk.countries.includes(document.querySelector("#country-select").value)) document.querySelector("#country-select").value = risk.countries[0];
+  state.basedOnUpdate = risk.basedOnUpdate;
+  document.querySelector("#risk-title-preview").textContent = risk.title;
+  document.querySelector("#risk-title-preview").title = risk.title;
+  document.querySelectorAll("#overview-code, #experts-code, #survey-code, #source-code, #notifications-code").forEach((element) => { element.textContent = risk.code; });
+  ["#survey-report-date", "#source-report-date", "#overview-report-date"].forEach((selector) => { document.querySelector(selector).textContent = risk.basedOnUpdate; });
+  document.querySelector("#risk-alert-title").textContent = risk.title;
+  document.querySelector("#source-summary").textContent = risk.summary || risk.title;
+  const riskAlert = document.querySelector("#risk-alert");
+  riskAlert.querySelector(".priority-kicker").textContent = risk.trend.toLowerCase().includes("deteriorat") ? "RISK TREND DETERIORATED" : "CURRENT RISK PROFILE";
+  riskAlert.querySelector(".risk-level-value").textContent = risk.level;
+  riskAlert.querySelector(".risk-trend-value").textContent = risk.trend;
+}
 
 function currentExperts() {
-  return state.experts.filter((expert) => expert.riskCode === state.riskCode && expert.status !== "Rejected");
+  return state.experts.filter((expert) => expert.riskCodes.includes(state.riskCode) && expert.status !== "Rejected");
 }
 
 function switchView(viewName) {
@@ -66,60 +177,60 @@ function switchView(viewName) {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-function renderExpertTable(targetId, emptyId, searchValue = "", includeStatusFilter = false) {
+function renderExpertTable(searchValue = "") {
   const search = searchValue.trim().toLowerCase();
-  const filtered = currentExperts().filter((expert) => {
+  const filtered = currentExperts().slice().sort((first, second) => Number(second.status === "Awaiting response") - Number(first.status === "Awaiting response")).filter((expert) => {
     const matchesType = state.typeFilter === "all" || expert.type === state.typeFilter;
-    const matchesStatus = !includeStatusFilter || state.statusFilter === "all" || expert.status === state.statusFilter;
-    const matchesSearch = !search || `${expert.name} ${expert.type} ${expert.invite} ${expert.status}`.toLowerCase().includes(search);
+    const matchesStatus = state.statusFilter === "all" || expert.status === state.statusFilter;
+    const matchesSearch = !search || `${expert.internalAlias} ${expert.name} ${expert.type} ${expert.invite} ${expert.status}`.toLowerCase().includes(search);
     return matchesType && matchesStatus && matchesSearch;
   });
-  const rows = document.getElementById(targetId);
+  const rows = document.querySelector("#experts-rows");
   rows.innerHTML = filtered.map((expert) => `
     <tr>
-      <td><div class="expert-name"><span class="expert-avatar ${expert.type === "B" ? "type-b-avatar" : ""}">${escapeHTML(initialsFor(expert.name))}</span><span><strong>${escapeHTML(expert.name)}</strong><small>${escapeHTML(expert.subtitle)}</small></span></div></td>
-      <td><span class="type-label ${expert.type === "B" ? "type-b-label" : ""}"><i class="type-dot type-${expert.type.toLowerCase()}"></i>Type ${expert.type}</span></td>
-      <td><span class="invite-cell">${escapeHTML(expert.invite)}</span><small class="invite-state ${expert.used ? "code-used" : "code-unused"}">${expert.used ? "Used to onboard" : "Issued · not used"}</small></td>
+      <td><button class="profile-link" data-expert-profile="${escapeHTML(expert.id)}"><span class="expert-avatar ${expert.type === "B" ? "type-b-avatar" : ""}">${escapeHTML(initialsFor(expert.internalAlias))}</span><span><strong>${escapeHTML(expert.internalAlias)}</strong><small>${expert.type === "B" ? "Informal expert" : "Long-term expert"}</small></span></button></td>
+      <td><span class="type-label ${expert.type === "B" ? "type-b-label" : ""}"><i class="type-dot type-${expert.type.toLowerCase()}"></i>${expert.type === "B" ? "Informal" : "Long-term"}</span></td>
+      <td><span class="invite-cell">${escapeHTML(expert.invite)}</span>${expert.invite !== "—" ? `<button class="copy-invite" data-copy-invite="${escapeHTML(expert.id)}" title="Copy invite code" aria-label="Copy invite code">▢</button>` : ""}<small class="invite-state ${expert.used ? "code-used" : "code-unused"}">${expert.used ? "Used to onboard" : "Issued · not used"}</small></td>
       <td><span class="status-badge ${statusClass[expert.status] || ""}">${escapeHTML(expert.status)}</span></td>
       <td class="last-activity">${escapeHTML(expert.activity)}</td>
-      <td><button class="row-more" data-copy-invite="${escapeHTML(expert.id)}" title="Copy invite code" aria-label="Copy invite code">···</button></td>
     </tr>`).join("");
-  document.getElementById(emptyId).hidden = filtered.length !== 0;
-  const countId = targetId === "expert-rows" ? "expert-count-label" : "experts-count-label";
-  document.getElementById(countId).textContent = `${filtered.length} ${filtered.length === 1 ? "expert" : "experts"}`;
-}
-
-function renderApprovals() {
-  const pending = state.approvals.filter((approval) => approval.riskCode === state.riskCode);
-  document.querySelector("#approval-list").innerHTML = pending.map((approval) => `
-    <article class="approval-card"><span class="expert-avatar type-b-avatar">${escapeHTML(initialsFor(approval.handle))}</span><div class="approval-main"><strong>${escapeHTML(approval.handle)}</strong><small>Type B · Registered ${escapeHTML(approval.arrived)}</small></div><div class="approval-screening"><span>Screening snapshot</span>${escapeHTML(approval.screening)}<br>Identifier: ${escapeHTML(approval.eventId)}</div><div class="approval-actions"><button class="btn reject" data-approval="${escapeHTML(approval.id)}" data-decision="reject">Reject</button><button class="btn approve" data-approval="${escapeHTML(approval.id)}" data-decision="approve">Approve</button></div></article>`).join("");
-  document.querySelector("#approval-empty").hidden = pending.length > 0;
-  document.querySelector("#approval-count-chip").textContent = `${pending.length} awaiting review`;
+  document.querySelector("#experts-empty").hidden = filtered.length !== 0;
+  document.querySelector("#experts-count-label").textContent = `${filtered.length} ${filtered.length === 1 ? "expert" : "experts"}`;
 }
 
 function renderQuestions() {
   document.querySelector("#question-list").innerHTML = state.questions.map((question, index) => `
-    <div class="question-row"><span class="question-order">${String(index + 1).padStart(2, "0")}</span><span class="question-kind ${question.kind === "Binary" ? "binary" : ""}">${question.kind}</span><textarea class="question-text" data-question-index="${index}" aria-label="Edit question ${index + 1}" rows="2">${escapeHTML(question.text)}</textarea><button class="question-delete" data-delete-question="${index}" title="Remove question" aria-label="Remove question">×</button></div>`).join("");
+    <div class="question-row"><span class="question-order">${String(index + 1).padStart(2, "0")}</span><span class="question-kind ${question.kind === "Binary" ? "binary" : ""}">${question.kind}</span><textarea class="question-text" data-question-index="${index}" aria-label="Edit question ${index + 1}" rows="2" ${state.editingQuestions ? "" : "readonly"}>${escapeHTML(question.text)}</textarea>${state.editingQuestions ? `<button class="question-delete" data-delete-question="${index}" title="Remove question" aria-label="Remove question">×</button>` : ""}</div>`).join("");
   const likertCount = state.questions.filter((question) => question.kind === "Likert").length;
   const binaryCount = state.questions.length - likertCount;
   document.querySelector("#question-count").textContent = state.questions.length;
   document.querySelector("#question-kind-count").textContent = `${likertCount} Likert, ${binaryCount} binary`;
+  document.querySelector("#add-question").hidden = !state.editingQuestions;
+}
+
+function openExpertProfile(expertId) {
+  const expert = state.experts.find((item) => item.id === expertId);
+  if (!expert) return;
+  const linkedRisks = expert.riskCodes.map((code) => riskCatalogue.find((risk) => risk.code === code)).filter(Boolean);
+  const expertiseTags = expert.expertise.map((area) => `<span class="profile-tag">${escapeHTML(area)}</span>`).join("");
+  const riskTags = linkedRisks.map((risk) => `<span class="profile-risk"><strong>${escapeHTML(risk.code)}</strong><small>${escapeHTML(risk.title)}</small></span>`).join("");
+  openModal(`<div class="modal-header"><div><p class="eyebrow">${expert.type === "B" ? "INFORMAL EXPERT" : "LONG-TERM EXPERT"} · PROFILE</p><h2 id="modal-title">${escapeHTML(expert.internalAlias)}</h2></div><button class="modal-close" data-close-modal aria-label="Close dialog">×</button></div><div class="profile-identifiers"><div><span>Internal alias</span><strong>${escapeHTML(expert.internalAlias)}</strong></div><div><span>Cross-community identifier</span><strong>${escapeHTML(expert.crossCommunityIdentifier)}</strong></div></div><div class="profile-section"><h3>Areas of expertise</h3><div class="profile-tags">${expertiseTags}</div></div><div class="profile-section"><h3>Risk Codes</h3><div class="profile-risks">${riskTags}</div></div><div class="profile-footer"><span class="status-badge ${statusClass[expert.status] || ""}">${escapeHTML(expert.status)}</span><span>Last activity · ${escapeHTML(expert.activity)}</span></div>`);
 }
 
 function renderFeedback() {
-  const items = state.submissions.filter((submission) => {
+  const items = state.submissions.slice().sort((first, second) => Number(second.status === "unreviewed") - Number(first.status === "unreviewed")).filter((submission) => {
     const matchesStatus = state.feedbackStatus === "all" || submission.status === state.feedbackStatus;
     const matchesCode = state.feedbackCode === "all" || (state.feedbackCode === "unlinked" ? !submission.riskCode : submission.riskCode === state.feedbackCode);
     return matchesStatus && matchesCode;
   });
   document.querySelector("#feedback-list").innerHTML = items.map((submission) => `
-    <article class="feedback-card ${submission.status === "reviewed" ? "reviewed" : ""}"><div class="feedback-head"><span class="latest-initial">${escapeHTML(initialsFor(submission.handle))}</span><div class="feedback-who"><strong>${escapeHTML(submission.handle)}</strong><small>Type ${submission.type} · ${submission.riskCode ? `Linked to ${escapeHTML(submission.riskCode)}` : "No Risk Code linked"}</small></div><time class="feedback-date">${escapeHTML(submission.date)}</time></div><p class="feedback-body">${escapeHTML(submission.body)}</p><div class="feedback-controls"><div class="feedback-tag-list">${submission.tags.map((tag) => `<span class="feedback-tag">${escapeHTML(tag)}</span>`).join("")}<button class="mini-action" data-add-tag="${escapeHTML(submission.id)}">+ Tag</button></div><div class="feedback-actions"><select class="small-select" data-link-submission="${escapeHTML(submission.id)}" aria-label="Link submission to a Risk Code"><option value="">Link Risk Code</option><option value="R-0427" ${submission.riskCode === "R-0427" ? "selected" : ""}>R-0427</option><option value="R-0183" ${submission.riskCode === "R-0183" ? "selected" : ""}>R-0183</option><option value="R-1102" ${submission.riskCode === "R-1102" ? "selected" : ""}>R-1102</option></select><button class="mini-action review-action" data-mark-reviewed="${escapeHTML(submission.id)}">${submission.status === "reviewed" ? "Reviewed ✓" : "Mark reviewed"}</button><button class="mini-action" data-reply="${escapeHTML(submission.id)}">Reply</button></div></div></article>`).join("");
+    <article class="feedback-card ${submission.status === "unreviewed" ? "tip-unreviewed" : "reviewed"}"><div class="feedback-head"><span class="latest-initial">${escapeHTML(initialsFor(submission.handle))}</span><div class="feedback-who"><strong>${escapeHTML(submission.handle)}</strong><small>${submission.type === "B" ? "Informal" : "Long-term"} · ${submission.riskCode ? `Linked to ${escapeHTML(submission.riskCode)}` : "No Risk Code linked"}</small></div><time class="feedback-date">${escapeHTML(submission.date)}</time></div><p class="feedback-body">${escapeHTML(submission.body)}</p><div class="feedback-controls"><div class="feedback-tag-list">${submission.tags.map((tag) => `<span class="feedback-tag">${escapeHTML(tag)}</span>`).join("")}<button class="mini-action" data-add-tag="${escapeHTML(submission.id)}">+ Tag</button></div><div class="feedback-actions"><select class="small-select" data-link-submission="${escapeHTML(submission.id)}" aria-label="Link submission to a Risk Code"><option value="">Link Risk Code</option>${riskCatalogue.map((risk) => `<option value="${escapeHTML(risk.code)}" ${submission.riskCode === risk.code ? "selected" : ""}>${escapeHTML(risk.code)}</option>`).join("")}</select><button class="mini-action review-action" data-mark-reviewed="${escapeHTML(submission.id)}">${submission.status === "reviewed" ? "Reviewed ✓" : "Mark reviewed"}</button><button class="mini-action" data-reply="${escapeHTML(submission.id)}">Reply</button></div></div></article>`).join("");
   document.querySelector("#feedback-empty").hidden = items.length > 0;
 }
 
 function renderLatestFeedback() {
-  const latest = state.submissions.filter((item) => item.riskCode === state.riskCode).slice(0, 2);
-  document.querySelector("#latest-feedback").innerHTML = latest.map((item) => `<div class="latest-item"><span class="latest-initial">${escapeHTML(initialsFor(item.handle))}</span><span><strong>${escapeHTML(item.handle)}</strong><small>${escapeHTML(item.body.slice(0, 62))}${item.body.length > 62 ? "…" : ""}</small></span><time>${escapeHTML(item.date.split(",")[0])}</time></div>`).join("") || `<div class="history-empty">No feedback linked to this Risk Code yet.</div>`;
+  const latest = state.submissions.filter((item) => item.riskCode === state.riskCode).slice().sort((first, second) => Number(second.status === "unreviewed") - Number(first.status === "unreviewed")).slice(0, 3);
+  document.querySelector("#latest-feedback").innerHTML = latest.map((item) => `<div class="latest-item ${item.status === "unreviewed" ? "unreviewed" : ""}"><span class="latest-initial">${escapeHTML(initialsFor(item.handle))}</span><span><strong>${escapeHTML(item.handle)}</strong><small>${escapeHTML(item.body.slice(0, 80))}${item.body.length > 80 ? "…" : ""}</small></span><time>${item.status === "unreviewed" ? "NEW" : escapeHTML(item.date.split(",")[0])}</time></div>`).join("") || `<div class="history-empty">No voluntary information linked to this Risk Code.</div>`;
 }
 
 function renderNotifications() {
@@ -127,24 +238,17 @@ function renderNotifications() {
   document.querySelector("#recipient-all-count").textContent = `${experts.length} recipients`;
   document.querySelector("#recipient-a-count").textContent = `${experts.filter((expert) => expert.type === "A").length} recipients`;
   document.querySelector("#recipient-b-count").textContent = `${experts.filter((expert) => expert.type === "B").length} recipients`;
-  document.querySelector("#notification-history").innerHTML = state.notifications.slice(0, 5).map((item) => `<div class="history-item"><strong>${escapeHTML(item.subject)}</strong><small>${escapeHTML(item.date)} · ${item.count} recipients (${item.type === "all" ? "All experts" : `Type ${item.type}`})</small></div>`).join("") || `<div class="history-empty">No notifications queued yet.</div>`;
+  document.querySelector("#notification-history").innerHTML = state.notifications.slice(0, 5).map((item) => `<div class="history-item"><strong>${escapeHTML(item.subject)}</strong><small>${escapeHTML(item.date)} · ${item.count} recipients (${item.type === "all" ? "All experts" : item.type === "A" ? "Long-term experts" : "Informal experts"})</small></div>`).join("") || `<div class="history-empty">No notifications queued yet.</div>`;
 }
 
 function renderSummary() {
   const experts = currentExperts();
-  const unreviewedCount = state.submissions.filter((item) => item.status === "unreviewed").length;
-  const pendingCount = state.approvals.filter((item) => item.riskCode === state.riskCode).length;
-  const awaitingCount = experts.filter((expert) => expert.status === "Awaiting response").length;
-  document.querySelector("#stat-experts").textContent = experts.length;
-  document.querySelector("#stat-awaiting").textContent = awaitingCount;
-  document.querySelector("#stat-feedback").textContent = unreviewedCount;
-  document.querySelector("#stat-survey").textContent = state.surveyStatus;
-  document.querySelector("#survey-stat-detail").textContent = state.surveyStatus === "Draft" ? `${state.questions.length} questions ready to review` : "Published to expert panel";
-  document.querySelector("#expert-nav-count").textContent = experts.length;
-  document.querySelector("#approval-nav-count").textContent = pendingCount;
+  const unreviewedCount = state.submissions.filter((item) => item.status === "unreviewed" && item.riskCode === state.riskCode).length;
   document.querySelector("#feedback-nav-count").textContent = unreviewedCount;
   document.querySelector("#feedback-count-chip").textContent = `${unreviewedCount} unreviewed`;
   document.querySelector("#unreviewed-filter-count").textContent = unreviewedCount;
+  document.querySelector("#home-unreviewed-count").textContent = unreviewedCount;
+  document.querySelector("#overview-survey-count").textContent = state.questions.length;
   document.querySelector("#experts-total").textContent = experts.length;
   document.querySelector("#experts-a").textContent = experts.filter((expert) => expert.type === "A").length;
   document.querySelector("#experts-b").textContent = experts.filter((expert) => expert.type === "B").length;
@@ -155,14 +259,11 @@ function renderSummary() {
   document.querySelector("#survey-page-status").classList.toggle("published-badge", state.surveyStatus === "Published");
   document.querySelector("#publish-survey").innerHTML = state.surveyStatus === "Published" ? `<span class="button-icon">✓</span> Published` : `<span class="button-icon">↗</span> Publish survey`;
   document.querySelector("#publish-survey").disabled = state.surveyStatus === "Published";
-  document.querySelectorAll("#overview-code, #experts-code, #approvals-code, #survey-code, #survey-code-preview, #source-code, #notifications-code").forEach((element) => { element.textContent = state.riskCode; });
 }
 
 function renderAll() {
   renderSummary();
-  renderExpertTable("expert-rows", "expert-empty", document.querySelector("#expert-search").value);
-  renderExpertTable("experts-rows", "experts-empty", document.querySelector("#experts-search").value, true);
-  renderApprovals();
+  renderExpertTable(document.querySelector("#experts-search").value);
   renderQuestions();
   renderFeedback();
   renderLatestFeedback();
@@ -189,10 +290,10 @@ function closeModal() {
 }
 
 function openExpertModal() {
-  openModal(`<div class="modal-header"><div><p class="eyebrow">TYPE A · ANALYST ONBOARDING</p><h2 id="modal-title">Add an expert</h2></div><button class="modal-close" data-close-modal aria-label="Close dialog">×</button></div>
+  openModal(`<div class="modal-header"><div><p class="eyebrow">LONG-TERM EXPERT · ANALYST ONBOARDING</p><h2 id="modal-title">Add an expert</h2></div><button class="modal-close" data-close-modal aria-label="Close dialog">×</button></div>
     <form id="expert-form"><div class="modal-form-grid">
       <div class="modal-field full"><label for="expert-display-name">Name or pseudonym <span class="muted">(optional)</span></label><input id="expert-display-name" name="name" type="text" placeholder="Leave blank to use an opaque handle" maxlength="80"></div>
-      <div class="modal-field full"><label for="expert-risk-code">Risk Code</label><select id="expert-risk-code" name="riskCode"><option ${state.riskCode === "R-0427" ? "selected" : ""}>R-0427</option><option ${state.riskCode === "R-0183" ? "selected" : ""}>R-0183</option><option ${state.riskCode === "R-1102" ? "selected" : ""}>R-1102</option></select></div>
+      <div class="modal-field full"><label for="expert-risk-code">Risk Code</label><select id="expert-risk-code" name="riskCode">${riskCatalogue.map((risk) => `<option value="${escapeHTML(risk.code)}" ${risk.code === state.riskCode ? "selected" : ""}>${escapeHTML(risk.code)} · ${escapeHTML(risk.title)}</option>`).join("")}</select></div>
       <div class="modal-field full"><label for="expert-education">Educational background</label><textarea id="expert-education" name="education" placeholder="Education, training, or relevant experience"></textarea></div>
       <div class="modal-field"><label for="expert-partners">Partner organisations</label><input id="expert-partners" name="partners" type="text" placeholder="Organisation names"></div>
       <div class="modal-field"><label for="expert-politics">Political affiliation</label><input id="expert-politics" name="politics" type="text" placeholder="As disclosed by expert"></div>
@@ -201,11 +302,11 @@ function openExpertModal() {
 }
 
 function openInviteResult(expert) {
-  openModal(`<div class="modal-header"><div><p class="eyebrow">INVITE READY · TYPE A</p><h2 id="modal-title">Share this invite code</h2></div><button class="modal-close" data-close-modal aria-label="Close dialog">×</button></div><div class="invite-result"><p>Copy and share this code with <strong>${escapeHTML(expert.name)}</strong> manually. No message has been sent.</p><div class="invite-code-row"><code class="invite-code">${escapeHTML(expert.invite)}</code><button class="copy-code" data-copy-value="${escapeHTML(expert.invite)}">Copy code</button></div></div><div class="modal-foot"><button class="btn primary-action" data-close-modal>Done</button></div>`);
+  openModal(`<div class="modal-header"><div><p class="eyebrow">INVITE READY · LONG-TERM EXPERT</p><h2 id="modal-title">Share this invite code</h2></div><button class="modal-close" data-close-modal aria-label="Close dialog">×</button></div><div class="invite-result"><p>Copy and share this code with <strong>${escapeHTML(expert.name)}</strong> manually. No message has been sent.</p><div class="invite-code-row"><code class="invite-code">${escapeHTML(expert.invite)}</code><button class="copy-code" data-copy-value="${escapeHTML(expert.invite)}">Copy code</button></div></div><div class="modal-foot"><button class="btn primary-action" data-close-modal>Done</button></div>`);
 }
 
 function openImportModal() {
-  openModal(`<div class="modal-header"><div><p class="eyebrow">BULK ONBOARDING · TYPE A</p><h2 id="modal-title">Import experts from CSV</h2></div><button class="modal-close" data-close-modal aria-label="Close dialog">×</button></div><div class="drop-zone" id="drop-zone" role="button" tabindex="0"><span class="drop-icon">↑</span><strong>Choose a CSV file or drop it here</strong><small>Each valid row receives a unique invite code.</small><input type="file" class="file-input" id="csv-file" accept=".csv,text/csv"></div><p class="csv-help">Required headers: risk_code, name, educational_background, partner_organisations, political_affiliation, connection_to_risk. The name column may be blank.</p><div id="import-results"></div><div class="modal-foot"><button class="btn secondary" data-close-modal>Close</button></div>`);
+  openModal(`<div class="modal-header"><div><p class="eyebrow">BULK ONBOARDING · LONG-TERM EXPERTS</p><h2 id="modal-title">Import experts from CSV</h2></div><button class="modal-close" data-close-modal aria-label="Close dialog">×</button></div><div class="drop-zone" id="drop-zone" role="button" tabindex="0"><span class="drop-icon">↑</span><strong>Choose a CSV file or drop it here</strong><small>Each valid row receives a unique invite code.</small><input type="file" class="file-input" id="csv-file" accept=".csv,text/csv"></div><p class="csv-help">Required headers: risk_code, name, educational_background, partner_organisations, political_affiliation, connection_to_risk. The name column may be blank.</p><div id="import-results"></div><div class="modal-foot"><button class="btn secondary" data-close-modal>Close</button></div>`);
   const dropZone = document.querySelector("#drop-zone");
   const fileInput = document.querySelector("#csv-file");
   dropZone.addEventListener("click", () => fileInput.click());
@@ -247,15 +348,16 @@ function processCSV(file) {
     } else {
       lines.forEach((line, index) => {
         const values = parseCSVLine(line);
-        const code = values[riskIndex]?.toUpperCase();
-        if (!/^R-\d{4}$/.test(code || "")) { errors.push(`Row ${index + 2}: invalid Risk Code`); return; }
+        const code = displayRiskCode((values[riskIndex] || "").toUpperCase().replace(/-/, ""));
+        if (!/^R-\d{4}$/.test(code) || !riskCatalogue.some((risk) => risk.code === code)) { errors.push(`Row ${index + 2}: unknown or invalid Risk Code`); return; }
         const name = values[nameIndex]?.trim() || `Expert ${String(Date.now()).slice(-4)}-${index + 1}`;
-        state.experts.unshift({ id: `e-${Date.now()}-${index}`, type: "A", name, subtitle: "Long-term expert", invite: makeInviteCode(), used: false, status: "Invited", activity: "Just now", riskCode: code });
+        const importedExpert = { id: `e-${Date.now()}-${index}`, type: "A", name, internalAlias: name, crossCommunityIdentifier: `LT-${String(Date.now()).slice(-4)}`, expertise: [...expertiseSamples.slice(0, 2)], riskCodes: [code], subtitle: "Long-term expert", invite: makeInviteCode(), used: false, status: "Invited", activity: "Just now", riskCode: code };
+        state.experts.unshift(importedExpert);
         imported += 1;
       });
       renderAll();
     }
-    document.querySelector("#import-results").innerHTML = `<div class="import-results"><strong>${imported} imported · ${errors.length} row${errors.length === 1 ? "" : "s"} with errors</strong>${errors.length ? `<ul>${errors.map((error) => `<li>${escapeHTML(error)}</li>`).join("")}</ul>` : "<span>Invite codes have been generated for each imported Type A expert.</span>"}</div>`;
+    document.querySelector("#import-results").innerHTML = `<div class="import-results"><strong>${imported} imported · ${errors.length} row${errors.length === 1 ? "" : "s"} with errors</strong>${errors.length ? `<ul>${errors.map((error) => `<li>${escapeHTML(error)}</li>`).join("")}</ul>` : "<span>Invite codes have been generated for each long-term expert.</span>"}</div>`;
   };
   reader.readAsText(file);
 }
@@ -279,23 +381,16 @@ document.querySelectorAll("[data-filter-type]").forEach((button) => button.addEv
   renderAll();
 }));
 document.querySelector("#status-filter").addEventListener("change", (event) => { state.statusFilter = event.target.value; renderAll(); });
-document.querySelector("#expert-search").addEventListener("input", (event) => renderExpertTable("expert-rows", "expert-empty", event.target.value));
-document.querySelector("#experts-search").addEventListener("input", (event) => renderExpertTable("experts-rows", "experts-empty", event.target.value, true));
-document.querySelector("#risk-code-select").addEventListener("change", (event) => {
-  state.riskCode = event.target.value;
-  document.querySelector("#status-filter").value = "all";
-  state.statusFilter = "all";
-  renderAll();
-  showToast(`Workspace switched to ${state.riskCode}`);
-});
-
+document.querySelector("#experts-search").addEventListener("input", (event) => renderExpertTable(event.target.value));
 document.querySelector("#modal-backdrop").addEventListener("click", (event) => { if (event.target.id === "modal-backdrop" || event.target.closest("[data-close-modal]")) closeModal(); });
 document.addEventListener("keydown", (event) => { if (event.key === "Escape" && !document.querySelector("#modal-backdrop").hidden) closeModal(); });
 document.addEventListener("submit", (event) => {
   if (event.target.id === "expert-form") {
     event.preventDefault();
     const formData = new FormData(event.target);
-    const expert = { id: `e-${Date.now()}`, type: "A", name: String(formData.get("name") || "").trim() || `Expert ${String(Date.now()).slice(-4)}`, subtitle: "Long-term expert", invite: makeInviteCode(), used: false, status: "Invited", activity: "Just now", riskCode: String(formData.get("riskCode")), screening: Object.fromEntries(["education", "partners", "politics", "connection"].map((key) => [key, String(formData.get(key) || "")])) };
+    const name = String(formData.get("name") || "").trim() || `Expert ${String(Date.now()).slice(-4)}`;
+    const riskCode = String(formData.get("riskCode"));
+    const expert = { id: `e-${Date.now()}`, type: "A", name, internalAlias: name, crossCommunityIdentifier: `LT-${String(Date.now()).slice(-4)}`, expertise: [...expertiseSamples.slice(0, 2)], riskCodes: [riskCode], subtitle: "Long-term expert", invite: makeInviteCode(), used: false, status: "Invited", activity: "Just now", riskCode, screening: Object.fromEntries(["education", "partners", "politics", "connection"].map((key) => [key, String(formData.get(key) || "")])) };
     state.experts.unshift(expert);
     renderAll();
     openInviteResult(expert);
@@ -315,15 +410,12 @@ document.addEventListener("submit", (event) => {
 });
 
 document.addEventListener("click", async (event) => {
-  const approvalButton = event.target.closest("[data-approval]");
-  if (approvalButton) {
-    const approval = state.approvals.find((item) => item.id === approvalButton.dataset.approval);
-    if (approvalButton.dataset.decision === "approve") {
-      state.experts.unshift({ id: `e-${Date.now()}`, type: "B", name: approval.handle, subtitle: "Opaque handle", invite: "—", used: true, status: "Onboarded", activity: "Just now", riskCode: approval.riskCode });
-      showToast(`${approval.handle} approved and added to the expert panel`);
-    } else showToast(`${approval.handle} rejected`);
-    state.approvals = state.approvals.filter((item) => item.id !== approval.id);
-    renderAll();
+  const profileButton = event.target.closest("[data-expert-profile]");
+  if (profileButton) { openExpertProfile(profileButton.dataset.expertProfile); return; }
+  if (event.target.closest("#edit-questions")) {
+    state.editingQuestions = !state.editingQuestions;
+    document.querySelector("#edit-questions").innerHTML = state.editingQuestions ? `<span class="button-icon">✓</span> Save changes` : `<span class="button-icon">✎</span> Edit questions`;
+    renderQuestions();
     return;
   }
   const deleteQuestion = event.target.closest("[data-delete-question]");
@@ -368,7 +460,7 @@ async function copyText(value) {
 
 function openReplyModal(submissionId) {
   const submission = state.submissions.find((item) => item.id === submissionId);
-  openModal(`<div class="modal-header"><div><p class="eyebrow">FEEDBACK RESPONSE · MOCK EMAIL</p><h2 id="modal-title">Reply to contributor</h2></div><button class="modal-close" data-close-modal aria-label="Close dialog">×</button></div><div class="reply-context"><strong>To: ${escapeHTML(submission.handle)}</strong>${escapeHTML(submission.body)}</div><form id="reply-form" data-submission-id="${escapeHTML(submission.id)}"><div class="modal-field"><label for="reply-notes">Reply notes</label><textarea id="reply-notes" name="notes" required placeholder="Write a short response for the expert..."></textarea></div><div class="modal-foot"><button type="button" class="btn secondary" data-close-modal>Cancel</button><button type="submit" class="btn primary-action">Compose and send</button></div></form>`);
+  openModal(`<div class="modal-header"><div><p class="eyebrow">TIP RESPONSE · MOCK EMAIL</p><h2 id="modal-title">Reply to contributor</h2></div><button class="modal-close" data-close-modal aria-label="Close dialog">×</button></div><div class="reply-context"><strong>To: ${escapeHTML(submission.handle)}</strong>${escapeHTML(submission.body)}</div><form id="reply-form" data-submission-id="${escapeHTML(submission.id)}"><div class="modal-field"><label for="reply-notes">Reply notes</label><textarea id="reply-notes" name="notes" required placeholder="Write a short response for the expert..."></textarea></div><div class="modal-foot"><button type="button" class="btn secondary" data-close-modal>Cancel</button><button type="submit" class="btn primary-action">Compose and send</button></div></form>`);
 }
 
 document.addEventListener("change", (event) => {
@@ -416,3 +508,7 @@ document.addEventListener("submit", (event) => {
 
 document.querySelector("#message-character-count").textContent = "0 / 500";
 renderAll();
+loadRiskCatalogue().catch((error) => {
+  console.error("Unable to load the risk catalogue:", error);
+  showToast("Risk catalogue unavailable. Open this dashboard through a local web server.");
+});

@@ -22,11 +22,10 @@
       <div class="workspace-label">WORKSPACE</div>
       <nav class="main-nav" aria-label="Main navigation">
         <button class="nav-item active" data-view="overview"><span class="nav-icon">⌂</span>Overview</button>
-        <button class="nav-item" data-view="experts"><span class="nav-icon">◎</span>Expert panel <span class="nav-count" id="expert-nav-count">0</span></button>
-        <button class="nav-item" data-view="approvals"><span class="nav-icon">◷</span>Pending approvals <span class="nav-count alert" id="approval-nav-count">0</span></button>
-        <button class="nav-item" data-view="survey"><span class="nav-icon">▤</span>Survey review</button>
-        <button class="nav-item" data-view="feedback"><span class="nav-icon">▧</span>Feedback inbox <span class="nav-count alert" id="feedback-nav-count">0</span></button>
-        <button class="nav-item" data-view="notifications"><span class="nav-icon">↗</span>Notifications</button>
+        <button class="nav-item" data-view="experts"><span class="nav-icon">◎</span>Expert panel</button>
+        <button class="nav-item" data-view="survey"><span class="nav-icon">▤</span>New survey</button>
+        <button class="nav-item" data-view="feedback"><span class="nav-icon">▧</span>Tips inbox <span class="nav-count alert" id="feedback-nav-count">0</span></button>
+        <button class="nav-item" data-view="notifications"><span class="nav-icon">↗</span>Send mass notification</button>
       </nav>
 
       <div class="sidebar-bottom">
@@ -40,12 +39,9 @@
         <button class="mobile-menu" id="mobile-menu" aria-label="Open navigation">☰</button>
         <div class="breadcrumb"><span>Workspace</span><span class="crumb-sep">/</span><strong id="topbar-section">Overview</strong></div>
         <div class="topbar-tools">
-          <label class="risk-picker-label" for="risk-code-select">RISK CODE</label>
-          <select class="risk-picker" id="risk-code-select" aria-label="Select risk code">
-            <option>R-0427</option>
-            <option>R-0183</option>
-            <option>R-1102</option>
-          </select>
+          <div class="profile-picker"><label class="risk-picker-label" for="country-select">COUNTRY</label><select class="country-picker" id="country-select" aria-label="Select country"><option>Loading risk data…</option></select></div>
+          <div class="profile-picker"><label class="risk-picker-label" for="risk-code-select">RISK PROFILE</label><select class="risk-picker" id="risk-code-select" aria-label="Select risk code"><option>Loading…</option></select></div>
+          <div class="risk-title-preview" id="risk-title-preview" aria-live="polite"></div>
           <span class="topbar-divider"></span>
           <button class="help-button" id="help-button" title="About this workspace" aria-label="About this workspace">?</button>
         </div>
@@ -53,116 +49,78 @@
 
       <div class="view-wrap">
         <section class="view active" id="view-overview" data-title="Overview">
-          <div class="page-heading">
-            <div><p class="eyebrow">RISK PANEL <span id="overview-code">R-0427</span></p><h1>Field intelligence</h1><p class="page-subtitle">Manage your expert panel and incoming signals.</p></div>
-            <div class="heading-actions"><span class="updated-label"><span class="live-dot"></span>Updated just now</span><button class="btn primary-action" data-action="add-expert"><span class="plus">+</span> Add expert</button></div>
-          </div>
-
-          <div class="summary-grid" aria-label="Panel summary">
-            <article class="summary-item"><div class="summary-top"><span>Total experts</span><span class="summary-icon blue">◎</span></div><strong id="stat-experts">0</strong><small>Across contributor types A and B</small></article>
-            <article class="summary-item"><div class="summary-top"><span>Awaiting response</span><span class="summary-icon amber">◷</span></div><strong id="stat-awaiting">0</strong><small>Survey responses requested</small></article>
-            <article class="summary-item"><div class="summary-top"><span>New feedback</span><span class="summary-icon coral">▧</span></div><strong id="stat-feedback">0</strong><small>Unreviewed submissions</small></article>
-            <article class="summary-item"><div class="summary-top"><span>Survey status</span><span class="summary-icon green">▤</span></div><strong class="stat-word" id="stat-survey">Draft</strong><small id="survey-stat-detail">10 questions ready to review</small></article>
-          </div>
-
-          <div class="section-heading"><div><p class="eyebrow">PANEL MANAGEMENT</p><h2>Expert status board</h2></div><button class="text-action" data-view-link="experts">View expert panel <span>→</span></button></div>
-          <div class="board-toolbar">
-            <div class="filter-group" role="group" aria-label="Filter by contributor type">
-              <button class="filter-pill selected" data-filter-type="all">All types</button>
-              <button class="filter-pill" data-filter-type="A">Type A <span class="type-dot type-a"></span></button>
-              <button class="filter-pill" data-filter-type="B">Type B <span class="type-dot type-b"></span></button>
-            </div>
-            <label class="search-field"><span>⌕</span><input id="expert-search" type="search" placeholder="Search experts" aria-label="Search experts"></label>
-          </div>
-          <div class="table-scroll">
-            <table class="data-table expert-table">
-              <thead><tr><th>Handle / alias</th><th>Type</th><th>Invite code</th><th>Onboarding</th><th>Last activity</th><th><span class="sr-only">Actions</span></th></tr></thead>
-              <tbody id="expert-rows"></tbody>
-            </table>
-            <div class="empty-state" id="expert-empty" hidden><span>◎</span><strong>No experts match these filters</strong><small>Try changing your search or contributor type.</small></div>
-          </div>
-          <div class="table-footer"><span id="expert-count-label">0 experts</span><span class="privacy-footnote"><span>●</span> Type B identities stay opaque outside this workspace</span></div>
-
-          <div class="overview-lower">
-            <article class="panel-block survey-preview">
-              <div class="block-heading"><div><p class="eyebrow">DAILY JOB</p><h2>Survey review</h2></div><span class="status-badge draft-badge" id="survey-status-badge">Draft</span></div>
-              <p class="block-copy">Review the questions drafted for <strong id="survey-code-preview">R-0427</strong> before sharing with experts.</p>
-              <div class="survey-preview-meta"><span>10 questions</span><span>·</span><span>5 Likert</span><span>·</span><span>5 binary</span></div>
-              <button class="btn secondary block-button" data-view-link="survey">Review survey <span>→</span></button>
+          <div class="page-heading overview-heading"><div><p class="eyebrow">ACTIVE RISK <span id="overview-code">R-1062</span></p><h1>Overview</h1></div></div>
+          <div class="overview-priorities">
+            <article class="priority-survey">
+              <div class="priority-survey-copy"><span class="priority-kicker">NEW SURVEY <span class="status-badge draft-badge" id="survey-status-badge">Draft</span></span><h2>Questions ready for your review</h2><p><span id="overview-survey-count">10</span> questions based on the latest report update, <strong id="overview-report-date">06/11/2026</strong>.</p><button class="btn survey-cta" data-view-link="survey">Review survey <span>→</span></button></div>
+              <div class="survey-mark" aria-hidden="true"><span>5</span><small>LIKERT</small><span class="mark-divider"></span><span>5</span><small>YES / NO</small></div>
             </article>
-            <article class="panel-block inbox-preview">
-              <div class="block-heading"><div><p class="eyebrow">LATEST SIGNALS</p><h2>Feedback inbox</h2></div><button class="icon-arrow" data-view-link="feedback" aria-label="Open feedback inbox">↗</button></div>
+            <article class="priority-tips">
+              <div class="priority-section-heading"><div><span class="priority-kicker">LATEST VOLUNTARY INFORMATION</span><h2>New tips to review <span class="unread-total" id="home-unreviewed-count">0</span></h2></div><button class="text-action" data-view-link="feedback">View tips <span>→</span></button></div>
               <div class="latest-feedback" id="latest-feedback"></div>
-              <button class="text-action inbox-link" data-view-link="feedback">Open inbox <span>→</span></button>
             </article>
           </div>
         </section>
 
         <section class="view" id="view-experts" data-title="Expert panel">
           <div class="page-heading">
-            <div><p class="eyebrow">PANEL MANAGEMENT <span id="experts-code">R-0427</span></p><h1>Expert panel</h1><p class="page-subtitle">Invite and manage contributors for this Risk Code.</p></div>
+            <div><p class="eyebrow">ACTIVE RISK <span id="experts-code">R-1062</span></p><h1>Expert panel</h1></div>
             <div class="heading-actions"><button class="btn secondary" id="import-open"><span class="button-icon">↑</span> Import CSV</button><button class="btn primary-action" data-action="add-expert"><span class="plus">+</span> Add expert</button></div>
           </div>
-          <div class="stat-strip"><span><strong id="experts-total">0</strong> total experts</span><span class="strip-separator"></span><span><span class="type-dot type-a"></span><strong id="experts-a">0</strong> Type A</span><span><span class="type-dot type-b"></span><strong id="experts-b">0</strong> Type B</span><span class="strip-separator"></span><span><strong id="experts-invited">0</strong> invites unused</span></div>
+          <div class="stat-strip"><span><strong id="experts-total">0</strong> experts</span><span class="strip-separator"></span><span><span class="type-dot type-a"></span><strong id="experts-a">0</strong> Long-term</span><span><span class="type-dot type-b"></span><strong id="experts-b">0</strong> Informal</span><span class="strip-separator"></span><span><strong id="experts-invited">0</strong> invites unused</span></div>
           <div class="board-toolbar full-toolbar">
             <div class="filter-group" role="group" aria-label="Filter by contributor type">
-              <button class="filter-pill selected" data-filter-type="all">All types</button><button class="filter-pill" data-filter-type="A">Type A <span class="type-dot type-a"></span></button><button class="filter-pill" data-filter-type="B">Type B <span class="type-dot type-b"></span></button>
+              <button class="filter-pill selected" data-filter-type="all">All experts</button><button class="filter-pill" data-filter-type="A">Long-term <span class="type-dot type-a"></span></button><button class="filter-pill" data-filter-type="B">Informal <span class="type-dot type-b"></span></button>
             </div>
             <select class="compact-select" id="status-filter" aria-label="Filter by onboarding status"><option value="all">All statuses</option><option value="Invited">Invited</option><option value="Onboarded">Onboarded</option><option value="Awaiting response">Awaiting response</option><option value="Responded">Responded</option></select>
             <label class="search-field"><span>⌕</span><input id="experts-search" type="search" placeholder="Search experts" aria-label="Search experts"></label>
           </div>
           <div class="table-scroll board-table-scroll">
             <table class="data-table expert-table">
-              <thead><tr><th>Handle / alias</th><th>Type</th><th>Invite code</th><th>Onboarding</th><th>Last activity</th><th></th></tr></thead><tbody id="experts-rows"></tbody>
+              <thead><tr><th>Internal alias</th><th>Contributor</th><th>Invite code</th><th>Status</th><th>Last activity</th></tr></thead><tbody id="experts-rows"></tbody>
             </table>
             <div class="empty-state" id="experts-empty" hidden><span>◎</span><strong>No experts match these filters</strong><small>Try changing the status, search, or contributor type.</small></div>
           </div>
           <div class="table-footer"><span id="experts-count-label">0 experts</span><span class="privacy-footnote"><span>●</span> Submission linkage is not shown on this board</span></div>
-          <div class="bottom-callout"><span class="callout-mark">i</span><span><strong>Contributor privacy</strong> Type B records use opaque handles. This internal workspace may link records for operational review; no cross-community identifiers are shown.</span></div>
-        </section>
-
-        <section class="view" id="view-approvals" data-title="Pending approvals">
-          <div class="page-heading"><div><p class="eyebrow">CONTRIBUTOR REVIEW <span id="approvals-code">R-0427</span></p><h1>Pending approvals</h1><p class="page-subtitle">Review casual contributors who have self-onboarded.</p></div><span class="count-chip" id="approval-count-chip">0 awaiting review</span></div>
-          <div class="approval-notice"><span class="notice-symbol">i</span><p>Type B contributors use an opaque handle. Approving makes their profile visible in this Risk Code’s expert panel.</p></div>
-          <div id="approval-list" class="approval-list"></div>
-          <div class="empty-state empty-inline" id="approval-empty" hidden><span>✓</span><strong>All caught up</strong><small>New Type B registrations will appear here for review.</small></div>
+          <div class="bottom-callout"><span class="callout-mark">i</span><span><strong>Privacy</strong> Informal expert identifiers and records are visible only in this internal workspace.</span></div>
         </section>
 
         <section class="view" id="view-survey" data-title="Survey review">
-          <div class="page-heading"><div><p class="eyebrow">DAILY JOB <span id="survey-code">R-0427</span></p><h1>Survey review</h1><p class="page-subtitle">Edit the draft before manually publishing it to experts.</p></div><div class="heading-actions"><span class="status-badge draft-badge" id="survey-page-status">Draft</span><button class="btn primary-action" id="publish-survey"><span class="button-icon">↗</span> Publish survey</button></div></div>
+          <div class="page-heading"><div><p class="eyebrow">ACTIVE RISK <span id="survey-code">R-1062</span></p><h1>New survey</h1></div><div class="heading-actions"><span class="status-badge draft-badge" id="survey-page-status">Draft</span><button class="btn secondary" id="edit-questions"><span class="button-icon">✎</span> Edit questions</button><button class="btn primary-action" id="publish-survey"><span class="button-icon">↗</span> Publish survey</button></div></div>
+          <div class="report-version">Based on report update <strong id="survey-report-date">06/11/2026</strong><span>·</span> Generated today at 06:15</div>
           <div class="survey-layout">
             <div class="survey-editor-column">
-              <div class="survey-editor-toolbar"><div><strong>Questions</strong><small><span id="question-count">10</span> questions <span class="muted-separator">·</span> <span id="question-kind-count">5 Likert, 5 binary</span></small></div><button class="btn secondary sm" id="add-question"><span class="plus">+</span> Add question</button></div>
+              <div class="survey-editor-toolbar"><div><strong>Questions</strong><small><span id="question-count">10</span> questions <span class="muted-separator">·</span> <span id="question-kind-count">5 Likert, 5 binary</span></small></div><button class="btn secondary sm" id="add-question" hidden><span class="plus">+</span> Add question</button></div>
               <div id="question-list" class="question-list"></div>
             </div>
-            <aside class="source-panel"><p class="eyebrow">SOURCE CONTEXT</p><h2>Risk assessment summary</h2><p class="source-summary">Armed clashes around key transport corridors may intensify over the coming weeks, disrupting access to health facilities and displacing communities. Localised shortages of essential supplies are already reported in affected districts.</p><div class="source-divider"></div><div class="source-meta"><span>Risk Code</span><strong id="source-code">R-0427</strong></div><div class="source-meta"><span>Draft generated</span><strong>Today, 06:15</strong></div><div class="source-note"><span>i</span> Publishing sends this survey to the selected expert panel. Nothing is sent automatically.</div></aside>
+              <aside class="source-panel"><p class="eyebrow">SOURCE CONTEXT</p><h2>Risk assessment summary</h2><p class="source-summary" id="source-summary">Summary loads from the selected risk profile.</p><div class="source-divider"></div><div class="source-meta"><span>Risk Code</span><strong id="source-code">R-1062</strong></div><div class="source-meta"><span>Report update</span><strong id="source-report-date">07/10/2026</strong></div><div class="source-note"><span>i</span> Publishing sends this survey to the selected expert panel. Nothing is sent automatically.</div></aside>
           </div>
         </section>
 
-        <section class="view" id="view-feedback" data-title="Feedback inbox">
-          <div class="page-heading"><div><p class="eyebrow">INCOMING INTELLIGENCE</p><h1>Feedback inbox</h1><p class="page-subtitle">Triage and respond to unstructured signals from contributors.</p></div><span class="count-chip" id="feedback-count-chip">0 unreviewed</span></div>
-          <div class="board-toolbar feedback-toolbar"><div class="filter-group" role="group" aria-label="Filter feedback"><button class="filter-pill selected" data-feedback-status="all">All submissions</button><button class="filter-pill" data-feedback-status="unreviewed">Unreviewed <span class="filter-number" id="unreviewed-filter-count">0</span></button><button class="filter-pill" data-feedback-status="reviewed">Reviewed</button></div><select class="compact-select" id="feedback-code-filter" aria-label="Filter by linked Risk Code"><option value="all">All Risk Codes</option><option value="R-0427">R-0427</option><option value="R-0183">R-0183</option><option value="R-1102">R-1102</option><option value="unlinked">Unlinked</option></select></div>
+        <section class="view" id="view-feedback" data-title="Tips inbox">
+          <div class="page-heading"><div><p class="eyebrow">INCOMING INTELLIGENCE</p><h1>Tips inbox</h1></div><span class="count-chip" id="feedback-count-chip">0 unreviewed</span></div>
+          <div class="board-toolbar feedback-toolbar"><div class="filter-group" role="group" aria-label="Filter tips"><button class="filter-pill selected" data-feedback-status="all">All tips</button><button class="filter-pill" data-feedback-status="unreviewed">Unreviewed <span class="filter-number" id="unreviewed-filter-count">0</span></button><button class="filter-pill" data-feedback-status="reviewed">Reviewed</button></div><select class="compact-select" id="feedback-code-filter" aria-label="Filter by linked Risk Code"><option value="all">All Risk Codes</option><option value="unlinked">Unlinked</option></select></div>
           <div id="feedback-list" class="feedback-list"></div>
-          <div class="empty-state empty-inline" id="feedback-empty" hidden><span>▧</span><strong>No submissions here</strong><small>Try adjusting your inbox filters.</small></div>
+          <div class="empty-state empty-inline" id="feedback-empty" hidden><span>▧</span><strong>No tips here</strong><small>Try adjusting your inbox filters.</small></div>
         </section>
 
-        <section class="view" id="view-notifications" data-title="Notifications">
-          <div class="page-heading"><div><p class="eyebrow">MANUAL OUTREACH <span id="notifications-code">R-0427</span></p><h1>Mass notification</h1><p class="page-subtitle">Compose an update for a selected group of experts.</p></div></div>
+        <section class="view" id="view-notifications" data-title="Send mass notification">
+          <div class="page-heading"><div><p class="eyebrow">ACTIVE RISK <span id="notifications-code">R-1062</span></p><h1>Send mass notification</h1></div></div>
           <div class="notification-layout">
             <form class="notification-form panel-block" id="notification-form">
               <div class="block-heading"><div><p class="eyebrow">NEW MESSAGE</p><h2>Compose notification</h2></div><span class="mock-label">MOCK DELIVERY</span></div>
               <label class="form-label">Recipients</label>
               <div class="recipient-options" role="group" aria-label="Select recipients">
                 <button type="button" class="recipient-choice selected" data-recipient="all"><span class="recipient-check">✓</span><span><strong>All experts</strong><small id="recipient-all-count">0 recipients</small></span></button>
-                <button type="button" class="recipient-choice" data-recipient="A"><span class="recipient-check"></span><span><strong>Type A</strong><small id="recipient-a-count">0 recipients</small></span></button>
-                <button type="button" class="recipient-choice" data-recipient="B"><span class="recipient-check"></span><span><strong>Type B</strong><small id="recipient-b-count">0 recipients</small></span></button>
+                <button type="button" class="recipient-choice" data-recipient="A"><span class="recipient-check"></span><span><strong>Long-term experts</strong><small id="recipient-a-count">0 recipients</small></span></button>
+                <button type="button" class="recipient-choice" data-recipient="B"><span class="recipient-check"></span><span><strong>Informal experts</strong><small id="recipient-b-count">0 recipients</small></span></button>
               </div>
               <label class="form-label" for="notification-subject">Subject</label><input id="notification-subject" class="form-input" type="text" placeholder="A short, clear subject" maxlength="100" required>
               <label class="form-label" for="notification-message">Message</label><textarea id="notification-message" class="form-input notification-textarea" placeholder="Share a concise update with the selected experts..." maxlength="500" required></textarea>
               <div class="message-foot"><span>Delivery is mocked and logged in this prototype.</span><span id="message-character-count">0 / 500</span></div>
               <button class="btn primary-action send-button" type="submit"><span class="button-icon">↗</span> Queue notification</button>
             </form>
-            <aside class="notification-aside"><div class="delivery-note"><span class="delivery-icon">↗</span><h2>Manual by design</h2><p>Notifications are only sent when an analyst composes and queues them. No automated messages are triggered by a risk score change.</p></div><div class="history-block"><div class="block-heading"><div><p class="eyebrow">RECENT ACTIVITY</p><h2>Queued notifications</h2></div></div><div id="notification-history" class="notification-history"></div></div></aside>
+            <aside class="notification-aside"><div class="risk-alert" id="risk-alert"><span class="risk-alert-icon">↑</span><div><span class="priority-kicker">RISK TREND DETERIORATED</span><h2 id="risk-alert-title"></h2><p><strong>Risk level <span class="risk-level-value"></span></strong><span>Trend: <span class="risk-trend-value"></span></span></p></div></div><div class="delivery-note"><span class="delivery-icon">↗</span><h2>Manual by design</h2><p>Send a timely update to selected experts when an issue escalates. Delivery is simulated in this prototype.</p></div><div class="history-block"><div class="block-heading"><div><p class="eyebrow">RECENT ACTIVITY</p><h2>Queued notifications</h2></div></div><div id="notification-history" class="notification-history"></div></div></aside>
           </div>
         </section>
       </div>
