@@ -8,6 +8,7 @@ from typing import Annotated, Literal
 import db
 from analyst_api import require_analyst_key as _require_analyst_key
 from analyst_api import router as analyst_router
+from analyst_api import telegram_link
 from fastapi import Depends, FastAPI, HTTPException, Query, Response, status
 from fastapi.responses import HTMLResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -161,6 +162,14 @@ class ArticleComment(ArticleCommentCreate):
     created_at: datetime
 
 
+class ExpertNotification(BaseModel):
+    notification_id: str
+    risk_id: str
+    subject: str
+    body: str
+    sent_at: datetime
+
+
 class ContactRequestCreate(BaseModel):
     note: str | None = Field(default=None, max_length=1000)
 
@@ -181,7 +190,8 @@ def _expert_from_token(
         raise HTTPException(status_code=401, detail="Missing or invalid bearer token")
     with db.connect() as conn:
         expert = conn.execute(
-            """SELECT expert_id, group_id, token_hash, anonymity_level, display_name, channel, language
+            """SELECT expert_id, group_id, token_hash, anonymity_level, display_name, channel, language,
+                      contributor_type
                FROM experts WHERE token_hash = ?""",
             (_token_hash(credentials.credentials),),
         ).fetchone()
@@ -293,13 +303,20 @@ def preview_invite(invite_code: str) -> InvitePreview:
 def join_page(code: Annotated[str, Query(max_length=200)] = "") -> HTMLResponse:
     """Landing page for invite links. The ACAPS extension reads the code from this page."""
     safe = html.escape(code)
+    link = telegram_link(code)
+    telegram = (
+        f'<p>Prefer your phone? <a href="{html.escape(link)}">Open the ACAPS bot in Telegram</a> '
+        "and it will sign you in with this code.</p>"
+        if link
+        else ""
+    )
     return HTMLResponse(f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>Join ACAPS experts</title>
 <style>body{{font-family:system-ui,sans-serif;max-width:560px;margin:60px auto;padding:0 16px;color:#212121}}
 h1{{color:#004b78}}code{{background:#f2f2f2;padding:2px 6px;border-radius:3px}}</style></head>
 <body><h1>You're invited to the ACAPS expert network</h1>
 <p id="acaps-invite" data-code="{safe}">Install the ACAPS extension for Firefox, then reload this page.
-Your invite code is <code>{safe}</code>.</p></body></html>""")
+Your invite code is <code>{safe}</code>.</p>{telegram}</body></html>""")
 
 
 @app.post("/experts", response_model=ExpertRegistered, status_code=status.HTTP_201_CREATED, tags=["Registration"])
@@ -378,6 +395,29 @@ def update_expert(
             (expert["expert_id"],),
         ).fetchone()
     return _expert_response(dict(row))
+
+
+@app.get("/experts/me/notifications", response_model=list[ExpertNotification], tags=["Registration"])
+def list_my_notifications(
+    expert: Annotated[dict, Depends(_expert_from_token)],
+    since: Annotated[datetime | None, Query(description="Only notifications sent after this time")] = None,
+) -> list[ExpertNotification]:
+    """Mass notifications analysts sent to this expert's risk and contributor type, oldest first."""
+    with db.connect() as conn:
+        group = conn.execute("SELECT risk_id FROM groups WHERE group_id = ?", (expert["group_id"],)).fetchone()
+        rows = conn.execute(
+            """SELECT notification_id, risk_id, subject, body, sent_at FROM notifications
+               WHERE risk_id = ? AND audience IN ('all', ?)""",
+            (group["risk_id"], expert["contributor_type"]),
+        ).fetchall()
+    if since is not None and since.tzinfo is None:
+        since = since.replace(tzinfo=timezone.utc)
+    items = [
+        ExpertNotification(**{k: row[k] for k in row.keys() if k != "sent_at"}, sent_at=datetime.fromisoformat(row["sent_at"]))
+        for row in rows
+    ]
+    items = [n for n in items if since is None or n.sent_at > since]
+    return sorted(items, key=lambda n: n.sent_at)[-50:]
 
 
 @app.get(

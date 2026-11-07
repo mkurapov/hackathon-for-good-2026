@@ -62,6 +62,7 @@ flowchart TD
 | `daily_job.py` | Demo orchestrator for hardcoded risk `R1011`; skips existing surveys and closed risks, otherwise generates and saves | One failing risk does not stop the job | |
 | `analyst_api.py` | `/analyst/*` routes for the analyst dashboard: risks, expert onboarding (personal invite codes), survey review/edit/publish, tips inbox, mock mass notifications | Needs `ANALYST_API_KEY`; the dashboard's proxy (Vite in dev, nginx in Docker) adds the `X-Analyst-Key` header | |
 | `api.py` | FastAPI app; authentication, request validation, and API routes backed by SQLite | Article matching currently checks exact risk-ID/title text matches | |
+| `../telegram/` | Telegram bot: tips, surveys and mass notifications over Telegram. A thin client of the expert API; keeps its own `bot.db` | Spec and setup in `telegram/SPEC.md` | |
 | `openapi.yaml` | API contract | Assumptions are marked in the file | |
 | `SPEC_1.md` | Team requirements | | |
 
@@ -92,6 +93,7 @@ flowchart TD
 | `POST /experts` | Register an expert with an invite code, choose anonymity level, receive a token |
 | `GET /experts/me` | The expert's profile, including the group and risk they follow |
 | `PATCH /experts/me` | Change anonymity level, language or channel |
+| `GET /experts/me/notifications` | Mass notifications for the expert's risk and contributor type (`?since=`); the Telegram bot polls this |
 | `GET /experts/{expert_id}/surveys/current` | Outstanding survey, or `204` |
 | `PUT /experts/{expert_id}/surveys/{survey_id}/responses` | Save answers (draft or submitted) |
 | `POST /notes` | Unstructured input |
@@ -119,6 +121,8 @@ flowchart TD
 | `ANALYST_API_KEY` | `api.py` | Required for `POST /groups`; sent as `X-Analyst-Key` |
 | `CSV_PATH` | `data.py` | Defaults to `risk-radar-export.csv` next to the script |
 | `DB_PATH` | `db.py` | Defaults to `groundtruth.db` next to the script |
+| `TELEGRAM_BOT_USERNAME` | `api.py`, `analyst_api.py` | Optional. Adds a `t.me/<bot>?start=<code>` link to `/join` and to new analyst invites |
+| `TELEGRAM_BOT_TOKEN` | `telegram/bot.py` | From @BotFather. The bot also reads `API_BASE_URL`, `BOT_DB_PATH`, `POLL_INTERVAL` |
 
 Never commit `.env` or `.cache/`.
 

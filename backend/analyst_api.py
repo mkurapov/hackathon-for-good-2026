@@ -67,6 +67,7 @@ class ExpertInvite(BaseModel):
     invite_code: str
     risk_id: str
     display_name: str | None
+    telegram_link: str | None = Field(default=None, description="Deep link that opens the Telegram bot with this code")
 
 
 class ImportRow(ExpertInviteCreate):
@@ -154,6 +155,17 @@ class TipReply(BaseModel):
 
 
 # ---------- helpers ----------
+TELEGRAM_START_RE = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
+
+
+def telegram_link(invite_code: str) -> str | None:
+    """t.me deep link that starts the bot with this invite code, if a bot is configured."""
+    username = (os.getenv("TELEGRAM_BOT_USERNAME") or "").strip().lstrip("@")
+    if not username or not TELEGRAM_START_RE.match(invite_code):
+        return None
+    return f"https://t.me/{username}?start={invite_code}"
+
+
 def _now() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -228,7 +240,7 @@ def _create_invite(conn, risk_id: str, body: ExpertInviteCreate) -> ExpertInvite
             _now().isoformat(),
         ),
     )
-    return ExpertInvite(invite_code=code, risk_id=risk_id, display_name=name)
+    return ExpertInvite(invite_code=code, risk_id=risk_id, display_name=name, telegram_link=telegram_link(code))
 
 
 def _latest_survey(conn, risk_id: str, published_only: bool = False):

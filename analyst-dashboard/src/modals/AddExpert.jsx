@@ -28,7 +28,7 @@ export default function AddExpert({ riskCode, risks, reloadExperts, openModal, a
     setSending(false);
     if (!invite) return;
     if (code === riskCode) reloadExperts();
-    openModal("invite", { name: name || "the expert", invite: invite.invite_code });
+    openModal("invite", { name: name || "the expert", invite: invite.invite_code, telegramLink: invite.telegram_link });
   };
 
   return (

@@ -158,6 +158,35 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationError'
 
+  /experts/me/notifications:
+    get:
+      tags: [Registration]
+      operationId: listMyNotifications
+      summary: Mass notifications sent to the expert's risk
+      description: |
+        Notifications analysts sent from the dashboard whose audience is `all` or matches the
+        expert's contributor type, oldest first (at most 50). Chat bots poll this with `since`
+        to deliver new ones.
+      parameters:
+        - name: since
+          in: query
+          required: false
+          description: Only notifications sent after this time
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Notifications, oldest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ExpertNotification'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
   /experts/{expert_id}/surveys/current:
     get:
       tags: [Surveys]
@@ -720,6 +749,22 @@ components:
             created_at:
               type: string
               format: date-time
+
+    ExpertNotification:
+      type: object
+      required: [notification_id, risk_id, subject, body, sent_at]
+      properties:
+        notification_id:
+          type: string
+        risk_id:
+          type: string
+        subject:
+          type: string
+        body:
+          type: string
+        sent_at:
+          type: string
+          format: date-time
 
     ContactRequestCreate:
       type: object

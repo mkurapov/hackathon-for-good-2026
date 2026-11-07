@@ -30,5 +30,20 @@ services:
       - api
     restart: unless-stopped
 
+  # Telegram bot: long polling, so it needs no published port. Set TELEGRAM_BOT_TOKEN in .env.
+  telegram:
+    build: ../telegram
+    environment:
+      API_BASE_URL: http://api:8000
+    env_file:
+      - path: ../.env
+        required: false
+    volumes:
+      - telegram-data:/data
+    depends_on:
+      - api
+    restart: unless-stopped
+
 volumes:
   groundtruth-data:
+  telegram-data:
