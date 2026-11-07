@@ -145,12 +145,12 @@ python daily_job.py --force          # regenerate R1011 even if closed (unless i
 uvicorn api:app --app-dir backend --reload --env-file .env
 ```
 
-Or run the API in Docker from the repo root. `docker-compose.yml` builds `backend/Dockerfile`, loads `.env` if present, and keeps the database in the `groundtruth-data` volume:
+Or run the API in Docker from the repo root. `docker/docker-compose.yml` builds `backend/Dockerfile`, loads `.env` if present, and keeps the database in the `groundtruth-data` volume:
 
 ```bash
-docker compose up -d --build
-docker compose exec api python seed_demo.py
-docker compose exec api python daily_job.py --risk R1043
+docker compose -f docker/docker-compose.yml up -d --build
+docker compose -f docker/docker-compose.yml exec api python seed_demo.py
+docker compose -f docker/docker-compose.yml exec api python daily_job.py --risk R1043
 ```
 
 Inside the container, `localhost` is the container itself. Point `LLM_BASE_URL` at `http://host.docker.internal:1234/api/v1` to reach LM Studio on the host.
