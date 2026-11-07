@@ -2,6 +2,7 @@
 import json
 import os
 import sqlite3
+from datetime import datetime, timezone
 from contextlib import contextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING, Iterator
@@ -29,7 +30,42 @@ CREATE TABLE IF NOT EXISTS experts (
     display_name     TEXT,
     channel          TEXT,
     language         TEXT,
+    contributor_type TEXT NOT NULL DEFAULT 'B',  -- A: long-term (personal invite) | B: informal (group invite)
     created_at       TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Personal invite codes an analyst issues to a long-term expert, with their screening answers.
+CREATE TABLE IF NOT EXISTS invites (
+    invite_code   TEXT PRIMARY KEY,
+    group_id      TEXT NOT NULL REFERENCES groups(group_id),
+    risk_id       TEXT NOT NULL,
+    display_name  TEXT,                      -- internal alias, visible to analysts only
+    screening     TEXT NOT NULL DEFAULT '{}',
+    expertise     TEXT NOT NULL DEFAULT '[]',
+    expert_id     TEXT REFERENCES experts(expert_id),  -- set once the code is used
+    created_at    TEXT NOT NULL
+);
+
+-- Risk metadata for the analyst dashboard, written by the daily job and the demo seed.
+CREATE TABLE IF NOT EXISTS risks (
+    risk_id     TEXT PRIMARY KEY,
+    title       TEXT NOT NULL,
+    countries   TEXT NOT NULL DEFAULT '[]',
+    risk_level  TEXT,
+    risk_trend  TEXT,
+    summary     TEXT,
+    updated_at  TEXT NOT NULL
+);
+
+-- Mass notifications. Delivery is mocked: rows are only logged.
+CREATE TABLE IF NOT EXISTS notifications (
+    notification_id  TEXT PRIMARY KEY,
+    risk_id          TEXT NOT NULL,
+    audience         TEXT NOT NULL,          -- all | A | B
+    subject          TEXT NOT NULL,
+    body             TEXT NOT NULL,
+    recipient_count  INTEGER NOT NULL,
+    sent_at          TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS surveys (
@@ -38,7 +74,9 @@ CREATE TABLE IF NOT EXISTS surveys (
     risk_title       TEXT NOT NULL,
     based_on_update  TEXT,
     generated_at     TEXT NOT NULL,
-    payload          TEXT NOT NULL           -- the full Survey as JSON (matches openapi.yaml)
+    payload          TEXT NOT NULL,          -- the full Survey as JSON (matches openapi.yaml)
+    status           TEXT NOT NULL DEFAULT 'draft',  -- draft | published; experts only see published
+    published_at     TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_surveys_risk ON surveys(risk_id, generated_at);
 
@@ -70,7 +108,11 @@ CREATE TABLE IF NOT EXISTS notes (
     risk_id     TEXT NOT NULL,
     text        TEXT NOT NULL,
     url         TEXT,
-    created_at  TEXT NOT NULL
+    created_at  TEXT NOT NULL,
+    tags        TEXT NOT NULL DEFAULT '[]',   -- analyst triage
+    status      TEXT NOT NULL DEFAULT 'unreviewed',
+    reply_notes TEXT,
+    replied_at  TEXT
 );
 
 CREATE TABLE IF NOT EXISTS article_comments (
@@ -96,6 +138,14 @@ CREATE TABLE IF NOT EXISTS contact_requests (
 # databases that already exist, so connect() adds any that are missing.
 ADDED_COLUMNS = {
     "article_comments": {"stance": "TEXT", "quote": "TEXT"},
+    "experts": {"contributor_type": "TEXT NOT NULL DEFAULT 'B'"},
+    "surveys": {"status": "TEXT NOT NULL DEFAULT 'draft'", "published_at": "TEXT"},
+    "notes": {
+        "tags": "TEXT NOT NULL DEFAULT '[]'",
+        "status": "TEXT NOT NULL DEFAULT 'unreviewed'",
+        "reply_notes": "TEXT",
+        "replied_at": "TEXT",
+    },
 }
 
 
@@ -132,6 +182,30 @@ def add_group(conn, group_id: str, name: str, risk_id: str, invite_code: str, co
     conn.execute(
         "INSERT INTO groups (group_id, name, risk_id, country_iso3, invite_code) VALUES (?, ?, ?, ?, ?)",
         (group_id, name, risk_id, country_iso3, invite_code),
+    )
+    conn.commit()
+
+
+def upsert_risk(
+    conn,
+    risk_id: str,
+    title: str,
+    countries: list[str] | str | None = None,
+    risk_level: str | None = None,
+    risk_trend: str | None = None,
+    summary: str | None = None,
+) -> None:
+    """Store the risk details the analyst dashboard shows next to a survey."""
+    if isinstance(countries, str):
+        countries = [c.strip() for c in countries.split(",") if c.strip()]
+    conn.execute(
+        """INSERT INTO risks (risk_id, title, countries, risk_level, risk_trend, summary, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?)
+           ON CONFLICT(risk_id) DO UPDATE SET
+               title = excluded.title, countries = excluded.countries, risk_level = excluded.risk_level,
+               risk_trend = excluded.risk_trend, summary = excluded.summary, updated_at = excluded.updated_at""",
+        (risk_id, title, json.dumps(countries or []), risk_level, risk_trend, summary,
+         datetime.now(timezone.utc).isoformat()),
     )
     conn.commit()
 
@@ -238,7 +312,7 @@ def survey_questions(conn: sqlite3.Connection, survey_id: str) -> dict[str, list
     for row in conn.execute(
         """SELECT question_id, question_type, text, dimension
            FROM survey_questions WHERE survey_id = ?
-           ORDER BY question_type, question_id""",
+           ORDER BY question_type, length(question_id), question_id""",
         (survey_id,),
     ):
         question = {"id": row["question_id"], "text": row["text"]}

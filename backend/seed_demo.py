@@ -3,6 +3,7 @@
 #
 #   python seed_demo.py            -> prints the invite code and invite link
 #   python seed_demo.py --reset    -> deletes the demo group's experts and answers first
+#   python seed_demo.py --draft    -> leaves the survey as a draft, to publish from the analyst dashboard
 import argparse
 from datetime import datetime, timezone
 
@@ -14,6 +15,10 @@ INVITE_CODE = "DEMO-VEN-2026"
 RISK_ID = "R9001"
 RISK_TITLE = "Venezuela: instability after the political transition"
 BASED_ON_UPDATE = "01/11/2026"
+SUMMARY = (
+    "Tensions between security forces and the new cabinet, pressure on released opposition figures, "
+    "and fragile rural food supply chains point to a risk of localised service collapse in the next quarter."
+)
 
 LIKERT = [
     ("likelihood", "How likely is it that military units in Venezuela turn against the new cabinet in the next three months?"),
@@ -34,6 +39,7 @@ BINARY = [
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--reset", action="store_true", help="remove demo experts and their answers first")
+    parser.add_argument("--draft", action="store_true", help="do not publish the survey (publish it from the dashboard)")
     args = parser.parse_args()
 
     survey = Survey(
@@ -51,13 +57,23 @@ def main() -> None:
             experts = [r["expert_id"] for r in conn.execute("SELECT expert_id FROM experts WHERE group_id = ?", (GROUP_ID,))]
             for table in ("responses", "notes", "article_comments", "contact_requests"):
                 conn.executemany(f"DELETE FROM {table} WHERE expert_id = ?", [(e,) for e in experts])
+            conn.execute("UPDATE invites SET expert_id = NULL WHERE group_id = ?", (GROUP_ID,))
             conn.execute("DELETE FROM experts WHERE group_id = ?", (GROUP_ID,))
             conn.commit()
         if conn.execute("SELECT 1 FROM groups WHERE group_id = ?", (GROUP_ID,)).fetchone() is None:
             db.add_group(conn, GROUP_ID, "Venezuela expert panel (demo)", RISK_ID, INVITE_CODE, "VEN")
+        db.upsert_risk(conn, RISK_ID, RISK_TITLE, ["Venezuela"], "High", "Deteriorating", SUMMARY)
         if not db.survey_exists(conn, survey.survey_id):
             db.save_survey(conn, survey)
+        status = "draft" if args.draft else "published"
+        conn.execute(
+            """UPDATE surveys SET status = ?, published_at = CASE WHEN ? = 'published' THEN ? END
+               WHERE survey_id = ?""",
+            (status, status, datetime.now(timezone.utc).isoformat(), survey.survey_id),
+        )
+        conn.commit()
 
+    print(f"Survey {survey.survey_id}: {status}")
     print(f"Invite code: {INVITE_CODE}")
     print(f"Invite link: http://localhost:8000/join?code={INVITE_CODE}")
 

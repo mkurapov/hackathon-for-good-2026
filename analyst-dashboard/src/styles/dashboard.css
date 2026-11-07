@@ -13,6 +13,8 @@
 }
 
 * { box-sizing: border-box; }
+/* Stop the macOS rubber-band bounce from pulling the sidebar away at the page edges. */
+html, body.dashboard-body { overscroll-behavior: none; }
 body.dashboard-body { background: var(--dash-canvas); color: var(--dash-ink); font-family: "Roboto Condensed", sans-serif; font-size: 15px; min-height: 100vh; }
 button, input, select, textarea { font: inherit; }
 button { color: inherit; }
@@ -478,3 +480,15 @@ select.risk-picker { width: 112px; }
   .priority-section-heading { align-items: flex-start; }
   .profile-identifiers { grid-template-columns: 1fr; }
 }
+/* ---------- Backend wiring: loading screen, screening, tip details ---------- */
+.load-screen { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 16px; text-align: center; color: var(--dash-muted); }
+.load-screen strong { color: var(--dash-navy); font-size: 20px; }
+.load-screen small { font-size: 15px; max-width: 520px; }
+.load-screen .btn { margin-top: 8px; }
+.profile-screening { margin: 0; display: grid; gap: 10px; }
+.profile-screening dt { color: var(--dash-muted); font-size: 12px; text-transform: uppercase; letter-spacing: .4px; }
+.profile-screening dd { margin: 2px 0 0; color: var(--dash-ink); }
+button.feedback-tag { font-family: inherit; border: 0; cursor: pointer; }
+.feedback-link { display: inline-block; margin: -4px 0 10px; color: var(--dash-cyan); font-size: 13px; word-break: break-all; }
+.feedback-reply { margin: 0 0 12px; padding: 8px 12px; border-left: 3px solid var(--dash-cyan); background: var(--dash-canvas); font-size: 14px; }
+.feedback-reply strong { color: var(--dash-navy); margin-right: 6px; }

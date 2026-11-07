@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { copyText, initialsFor, statusClass } from "../lib/utils.js";
+import { copyText, initialsFor, statusClass, timeAgo } from "../lib/utils.js";
 
 const STATUSES = ["Invited", "Onboarded", "Awaiting response", "Responded"];
 const awaitingFirst = (a, b) => Number(b.status === "Awaiting response") - Number(a.status === "Awaiting response");
@@ -13,7 +13,7 @@ export default function Experts({ risk, currentExperts, openModal, toast }) {
   const filtered = currentExperts.slice().sort(awaitingFirst).filter((expert) =>
     (typeFilter === "all" || expert.type === typeFilter) &&
     (statusFilter === "all" || expert.status === statusFilter) &&
-    (!query || `${expert.internalAlias} ${expert.name} ${expert.type} ${expert.invite} ${expert.status}`.toLowerCase().includes(query))
+    (!query || `${expert.internalAlias} ${expert.type} ${expert.invite} ${expert.status}`.toLowerCase().includes(query))
   );
   const countA = currentExperts.filter((e) => e.type === "A").length;
 
@@ -76,7 +76,7 @@ export default function Experts({ risk, currentExperts, openModal, toast }) {
                     <small className={`invite-state ${expert.used ? "code-used" : "code-unused"}`}>{expert.used ? "Used to onboard" : "Issued · not used"}</small>
                   </td>
                   <td><span className={`status-badge ${statusClass[expert.status] || ""}`}>{expert.status}</span></td>
-                  <td className="last-activity">{expert.activity}</td>
+                  <td className="last-activity">{timeAgo(expert.lastActivity, { withTime: true })}</td>
                 </tr>
               );
             })}

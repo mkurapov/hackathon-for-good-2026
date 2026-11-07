@@ -1,13 +1,14 @@
 import hashlib
 import html
 import json
-import os
 import secrets
 from datetime import datetime, timezone
 from typing import Annotated, Literal
 
 import db
-from fastapi import Depends, FastAPI, Header, HTTPException, Query, Response, status
+from analyst_api import require_analyst_key as _require_analyst_key
+from analyst_api import router as analyst_router
+from fastapi import Depends, FastAPI, HTTPException, Query, Response, status
 from fastapi.responses import HTMLResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import AnyUrl, BaseModel, Field, StrictBool, StrictInt, model_validator
@@ -17,6 +18,7 @@ app = FastAPI(
     version="0.1.0",
     description="API for expert registration, risk surveys, and contributions.",
 )
+app.include_router(analyst_router)
 bearer_scheme = HTTPBearer(auto_error=False)
 
 AnonymityLevel = Literal["known_to_acaps", "pseudonymous_to_peers", "fully_anonymous"]
@@ -193,14 +195,38 @@ def _expert_for_path(expert_id: str, expert: dict) -> None:
         raise HTTPException(status_code=403, detail="Token does not belong to this expert")
 
 
-def _require_analyst_key(
-    x_analyst_key: Annotated[str | None, Header()] = None,
-) -> None:
-    expected = os.getenv("ANALYST_API_KEY")
-    if not expected:
-        raise HTTPException(status_code=503, detail="Analyst API is not configured")
-    if x_analyst_key is None or not secrets.compare_digest(x_analyst_key, expected):
-        raise HTTPException(status_code=401, detail="Missing or invalid analyst key")
+def _resolve_invite(conn, invite_code: str) -> tuple[dict, dict | None] | None:
+    """Find the group behind an invite code.
+
+    Group codes are shared and register informal (type B) experts. Personal codes come from
+    the analyst dashboard, register one long-term (type A) expert, and can be used once.
+    Returns (group, personal_invite) or None if the code is unknown.
+    """
+    group = conn.execute(
+        "SELECT group_id, name, risk_id, country_iso3 FROM groups WHERE invite_code = ?",
+        (invite_code,),
+    ).fetchone()
+    if group is not None:
+        return dict(group), None
+    invite = conn.execute(
+        "SELECT invite_code, group_id, expert_id FROM invites WHERE invite_code = ?",
+        (invite_code,),
+    ).fetchone()
+    if invite is None:
+        return None
+    group = conn.execute(
+        "SELECT group_id, name, risk_id, country_iso3 FROM groups WHERE group_id = ?",
+        (invite["group_id"],),
+    ).fetchone()
+    return dict(group), dict(invite)
+
+
+def _latest_published_survey(conn, risk_id: str):
+    return conn.execute(
+        """SELECT survey_id, risk_id, risk_title, based_on_update, generated_at, payload FROM surveys
+           WHERE risk_id = ? AND status = 'published' ORDER BY generated_at DESC LIMIT 1""",
+        (risk_id,),
+    ).fetchone()
 
 
 def _risk_title(conn, risk_id: str) -> str | None:
@@ -249,12 +275,12 @@ def create_group(
 def preview_invite(invite_code: str) -> InvitePreview:
     """Shows which group and risk an invite code belongs to, so the expert can confirm before joining."""
     with db.connect() as conn:
-        group = conn.execute(
-            "SELECT name, risk_id, country_iso3 FROM groups WHERE invite_code = ?",
-            (invite_code,),
-        ).fetchone()
-        if group is None:
+        resolved = _resolve_invite(conn, invite_code)
+        if resolved is None:
             raise HTTPException(status_code=404, detail="Invite code not found")
+        group, invite = resolved
+        if invite is not None and invite["expert_id"] is not None:
+            raise HTTPException(status_code=409, detail="Invite code was already used")
         return InvitePreview(
             group_name=group["name"],
             risk_id=group["risk_id"],
@@ -281,16 +307,17 @@ def register_expert(body: ExpertRegistration) -> ExpertRegistered:
     token = secrets.token_urlsafe(32)
     expert_id = f"exp_{secrets.token_urlsafe(12)}"
     with db.connect() as conn:
-        group = conn.execute(
-            "SELECT group_id FROM groups WHERE invite_code = ?",
-            (body.invite_code,),
-        ).fetchone()
-        if group is None:
+        resolved = _resolve_invite(conn, body.invite_code)
+        if resolved is None:
             raise HTTPException(status_code=404, detail="Invite code not found")
+        group, invite = resolved
+        if invite is not None and invite["expert_id"] is not None:
+            raise HTTPException(status_code=409, detail="Invite code was already used")
         conn.execute(
             """INSERT INTO experts
-               (expert_id, group_id, token_hash, anonymity_level, display_name, channel, language)
-               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+               (expert_id, group_id, token_hash, anonymity_level, display_name, channel, language,
+                contributor_type)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 expert_id,
                 group["group_id"],
@@ -299,8 +326,14 @@ def register_expert(body: ExpertRegistration) -> ExpertRegistered:
                 body.display_name,
                 body.channel,
                 body.language,
+                "A" if invite is not None else "B",
             ),
         )
+        if invite is not None:
+            conn.execute(
+                "UPDATE invites SET expert_id = ? WHERE invite_code = ?",
+                (expert_id, invite["invite_code"]),
+            )
         conn.commit()
         row = conn.execute(
             """SELECT expert_id, group_id, anonymity_level, display_name, channel, language
@@ -361,11 +394,7 @@ def get_current_survey(
     _expert_for_path(expert_id, expert)
     with db.connect() as conn:
         group = conn.execute("SELECT risk_id FROM groups WHERE group_id = ?", (expert["group_id"],)).fetchone()
-        survey = conn.execute(
-            """SELECT survey_id, risk_id, risk_title, based_on_update, generated_at, payload FROM surveys
-               WHERE risk_id = ? ORDER BY generated_at DESC LIMIT 1""",
-            (group["risk_id"],),
-        ).fetchone()
+        survey = _latest_published_survey(conn, group["risk_id"])
         if survey is None:
             response.status_code = status.HTTP_204_NO_CONTENT
             return None
@@ -397,16 +426,12 @@ def put_survey_response(
     _expert_for_path(expert_id, expert)
     with db.connect() as conn:
         survey = conn.execute(
-            "SELECT risk_id, payload FROM surveys WHERE survey_id = ?",
+            "SELECT risk_id, payload FROM surveys WHERE survey_id = ? AND status = 'published'",
             (survey_id,),
         ).fetchone()
         if survey is None:
             raise HTTPException(status_code=404, detail="Survey not found")
-        latest = conn.execute(
-            """SELECT survey_id FROM surveys
-               WHERE risk_id = ? ORDER BY generated_at DESC LIMIT 1""",
-            (survey["risk_id"],),
-        ).fetchone()
+        latest = _latest_published_survey(conn, survey["risk_id"])
         if latest["survey_id"] != survey_id:
             raise HTTPException(status_code=409, detail="Survey is outdated")
         existing = conn.execute(
@@ -558,3 +583,4 @@ def request_contact(
         )
         conn.commit()
     return request
+

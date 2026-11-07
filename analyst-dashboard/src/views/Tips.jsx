@@ -1,31 +1,33 @@
 import { useState } from "react";
-import { riskCatalogue } from "../data/mock.js";
-import { initialsFor, typeLabel } from "../lib/utils.js";
+import { initialsFor, timeAgo, typeLabel } from "../lib/utils.js";
 
 const byUnreviewedFirst = (a, b) => Number(b.status === "unreviewed") - Number(a.status === "unreviewed");
 
-export default function Tips({ submissions, updateSubmission, unreviewedCount, openModal, toast }) {
+export default function Tips({ risks, submissions, updateSubmission, unreviewedCount, openModal, toast }) {
   const [status, setStatus] = useState("all");
   const [code, setCode] = useState("all");
 
   const items = submissions.slice().sort(byUnreviewedFirst).filter((s) =>
     (status === "all" || s.status === status) &&
-    (code === "all" || (code === "unlinked" ? !s.riskCode : s.riskCode === code))
+    (code === "all" || s.riskCode === code)
   );
 
-  const toggleReviewed = (s) => {
+  const toggleReviewed = async (s) => {
     const next = s.status === "reviewed" ? "unreviewed" : "reviewed";
-    updateSubmission(s.id, { status: next });
-    toast(next === "reviewed" ? "Submission marked reviewed" : "Submission reopened");
+    if (await updateSubmission(s.id, { status: next })) {
+      toast(next === "reviewed" ? "Tip marked reviewed" : "Tip reopened");
+    }
   };
   const addTag = (s) => {
-    const tag = window.prompt("Add a short tag");
-    if (tag?.trim()) updateSubmission(s.id, { tags: [...s.tags, tag.trim()] });
+    const tag = window.prompt("Add a short tag")?.trim();
+    if (tag && !s.tags.includes(tag)) updateSubmission(s.id, { tags: [...s.tags, tag] });
   };
-  const link = (s, value) => {
-    updateSubmission(s.id, { riskCode: value || null });
-    toast(value ? `Submission linked to ${value}` : "Risk Code link removed");
+  const removeTag = (s, tag) => updateSubmission(s.id, { tags: s.tags.filter((t) => t !== tag) });
+  const link = async (s, value) => {
+    if (await updateSubmission(s.id, { risk_id: value })) toast(`Tip linked to ${value}`);
   };
+  // A tip can point at a risk the dashboard does not list, so keep its code selectable.
+  const linkOptions = (s) => (risks.some((r) => r.code === s.riskCode) ? risks : [{ code: s.riskCode }, ...risks]);
 
   return (
     <section className="view active">
@@ -43,8 +45,7 @@ export default function Tips({ submissions, updateSubmission, unreviewedCount, o
         </div>
         <select className="compact-select" value={code} onChange={(e) => setCode(e.target.value)} aria-label="Filter by linked Risk Code">
           <option value="all">All Risk Codes</option>
-          {riskCatalogue.map((r) => <option key={r.code} value={r.code}>{r.code}</option>)}
-          <option value="unlinked">Unlinked</option>
+          {risks.map((r) => <option key={r.code} value={r.code}>{r.code}</option>)}
         </select>
       </div>
       <div className="feedback-list">
@@ -54,20 +55,23 @@ export default function Tips({ submissions, updateSubmission, unreviewedCount, o
               <span className="latest-initial">{initialsFor(s.handle)}</span>
               <div className="feedback-who">
                 <strong>{s.handle}</strong>
-                <small>{typeLabel(s.type)} · {s.riskCode ? `Linked to ${s.riskCode}` : "No Risk Code linked"}</small>
+                <small>{typeLabel(s.type)} · Linked to {s.riskCode}</small>
               </div>
-              <time className="feedback-date">{s.date}</time>
+              <time className="feedback-date">{timeAgo(s.createdAt, { withTime: true })}</time>
             </div>
             <p className="feedback-body">{s.body}</p>
+            {s.url && <a className="feedback-link" href={s.url} target="_blank" rel="noreferrer noopener">{s.url}</a>}
+            {s.reply && <p className="feedback-reply"><strong>Your reply</strong> {s.reply}</p>}
             <div className="feedback-controls">
               <div className="feedback-tag-list">
-                {s.tags.map((tag) => <span key={tag} className="feedback-tag">{tag}</span>)}
+                {s.tags.map((tag) => (
+                  <button key={tag} className="feedback-tag" title="Remove tag" onClick={() => removeTag(s, tag)}>{tag} ×</button>
+                ))}
                 <button className="mini-action" onClick={() => addTag(s)}>+ Tag</button>
               </div>
               <div className="feedback-actions">
-                <select className="small-select" value={s.riskCode || ""} onChange={(e) => link(s, e.target.value)} aria-label="Link submission to a Risk Code">
-                  <option value="">Link Risk Code</option>
-                  {riskCatalogue.map((r) => <option key={r.code} value={r.code}>{r.code}</option>)}
+                <select className="small-select" value={s.riskCode} onChange={(e) => link(s, e.target.value)} aria-label="Link tip to a Risk Code">
+                  {linkOptions(s).map((r) => <option key={r.code} value={r.code}>{r.code}</option>)}
                 </select>
                 <button className="mini-action review-action" onClick={() => toggleReviewed(s)}>{s.status === "reviewed" ? "Reviewed ✓" : "Mark reviewed"}</button>
                 <button className="mini-action" onClick={() => openModal("reply", { submissionId: s.id })}>Reply</button>

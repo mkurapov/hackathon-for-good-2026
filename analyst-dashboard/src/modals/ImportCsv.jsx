@@ -1,40 +1,48 @@
 import { useRef, useState } from "react";
 import { ModalHeader } from "../components/Modal.jsx";
-import { riskCatalogue } from "../data/mock.js";
-import { displayRiskCode, parseCSVLine } from "../lib/utils.js";
-import { newLongTermExpert } from "./newExpert.js";
+import { api } from "../lib/api.js";
+import { parseCSVLine } from "../lib/utils.js";
 
 const REQUIRED = ["educational_background", "partner_organisations", "political_affiliation", "connection_to_risk"];
 
-function importRows(text) {
+// Parses the CSV into API rows. Risk Codes are validated by the backend.
+function parseRows(text) {
   const lines = text.split(/\r?\n/).filter((line) => line.trim());
   const header = parseCSVLine(lines.shift() || "").map((v) => v.toLowerCase());
   const riskIndex = header.indexOf("risk_code");
   const nameIndex = header.indexOf("name");
   const missing = [...(riskIndex < 0 ? ["risk_code"] : []), ...REQUIRED.filter((f) => !header.includes(f))];
-  if (missing.length) return { experts: [], errors: [`Missing required column${missing.length > 1 ? "s" : ""}: ${missing.join(", ")}`] };
+  if (missing.length) return { error: `Missing required column${missing.length > 1 ? "s" : ""}: ${missing.join(", ")}` };
 
-  const experts = [];
-  const errors = [];
-  lines.forEach((line, index) => {
-    const values = parseCSVLine(line);
-    const code = displayRiskCode(values[riskIndex] || "");
-    if (!riskCatalogue.some((r) => r.code === code)) { errors.push(`Row ${index + 2}: unknown or invalid Risk Code`); return; }
-    const screening = Object.fromEntries(REQUIRED.map((f) => [f, values[header.indexOf(f)] || ""]));
-    experts.push(newLongTermExpert({ name: nameIndex >= 0 ? values[nameIndex] : "", riskCode: code, screening, suffix: `-${index + 1}` }));
-  });
-  return { experts, errors };
+  return {
+    rows: lines.map((line) => {
+      const values = parseCSVLine(line);
+      return {
+        risk_id: values[riskIndex] || "",
+        display_name: (nameIndex >= 0 ? values[nameIndex] : "") || null,
+        screening: Object.fromEntries(REQUIRED.map((f) => [f, values[header.indexOf(f)] || ""])),
+      };
+    }),
+  };
 }
 
-export default function ImportCsv({ addExperts, onClose }) {
+export default function ImportCsv({ riskCode, reloadExperts, attempt, onClose }) {
   const fileInput = useRef(null);
   const [dragover, setDragover] = useState(false);
   const [result, setResult] = useState(null);
 
   const process = async (file) => {
-    const { experts, errors } = importRows(await file.text());
-    if (experts.length) addExperts(experts);
-    setResult({ imported: experts.length, errors });
+    const { rows, error } = parseRows(await file.text());
+    if (error) { setResult({ imported: 0, errors: [error] }); return; }
+    if (!rows.length) { setResult({ imported: 0, errors: ["The file has no data rows"] }); return; }
+    const response = await attempt(() => api.importExperts(rows));
+    if (!response) return;
+    // The header is line 1, so data row n is line n + 1.
+    setResult({
+      imported: response.imported.length,
+      errors: response.errors.map((e) => `Row ${e.row + 1}: ${e.detail}`),
+    });
+    if (response.imported.some((invite) => invite.risk_id === riskCode)) reloadExperts();
   };
 
   return (

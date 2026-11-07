@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { nowLabel } from "../lib/utils.js";
+import { formatDateTime } from "../lib/utils.js";
 
 const RECIPIENTS = [
   { value: "all", label: "All experts" },
@@ -12,17 +12,20 @@ export default function Notifications({ risk, currentExperts, notifications, onQ
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
 
-  const countFor = (type) => currentExperts.filter((e) => type === "all" || e.type === type).length;
-  const deteriorating = risk.trend.toLowerCase().includes("deteriorat");
+  const [sending, setSending] = useState(false);
+  // Only registered experts can receive notifications; unused invites are not counted.
+  const countFor = (type) => currentExperts.filter((e) => e.used && (type === "all" || e.type === type)).length;
+  const deteriorating = (risk.trend || "").toLowerCase().includes("deteriorat");
 
-  const submit = (event) => {
+  const submit = async (event) => {
     event.preventDefault();
     if (!subject.trim() || !message.trim()) return;
-    const count = countFor(recipientType);
-    onQueue({ id: Date.now(), subject: subject.trim(), message: message.trim(), count, type: recipientType, date: nowLabel() });
+    setSending(true);
+    const sent = await onQueue({ subject: subject.trim(), message: message.trim(), type: recipientType });
+    setSending(false);
+    if (!sent) return;
     setSubject("");
     setMessage("");
-    toast(`Notification queued for ${count} experts`);
   };
 
   return (
@@ -50,7 +53,7 @@ export default function Notifications({ risk, currentExperts, notifications, onQ
           <label className="form-label" htmlFor="notification-message">Message</label>
           <textarea id="notification-message" className="form-input notification-textarea" placeholder="Share a concise update with the selected experts..." maxLength={500} required value={message} onChange={(e) => setMessage(e.target.value)} />
           <div className="message-foot"><span>Delivery is mocked and logged in this prototype.</span><span>{message.length} / 500</span></div>
-          <button className="btn primary-action send-button" type="submit"><span className="button-icon">↗</span> Queue notification</button>
+          <button className="btn primary-action send-button" type="submit" disabled={sending}><span className="button-icon">↗</span> Queue notification</button>
         </form>
         <aside className="notification-aside">
           <div className="risk-alert">
@@ -58,7 +61,9 @@ export default function Notifications({ risk, currentExperts, notifications, onQ
             <div>
               <span className="priority-kicker">{deteriorating ? "RISK TREND DETERIORATED" : "CURRENT RISK PROFILE"}</span>
               <h2>{risk.title}</h2>
-              <p><strong>Risk level {risk.level}</strong><span>Trend: {risk.trend}</span></p>
+              {(risk.level || risk.trend) && (
+                <p>{risk.level && <strong>Risk level {risk.level}</strong>}{risk.trend && <span>Trend: {risk.trend}</span>}</p>
+              )}
             </div>
           </div>
           <div className="delivery-note">
@@ -73,7 +78,7 @@ export default function Notifications({ risk, currentExperts, notifications, onQ
               {notifications.slice(0, 5).map((item) => (
                 <div key={item.id} className="history-item">
                   <strong>{item.subject}</strong>
-                  <small>{item.date} · {item.count} recipients ({RECIPIENTS.find((r) => r.value === item.type).label})</small>
+                  <small>{formatDateTime(item.sentAt)} · {item.count} recipients ({RECIPIENTS.find((r) => r.value === item.type).label})</small>
                 </div>
               ))}
             </div>

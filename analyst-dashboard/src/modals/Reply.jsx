@@ -1,12 +1,17 @@
+import { useState } from "react";
 import { ModalHeader } from "../components/Modal.jsx";
 
-export default function Reply({ submissionId, submissions, updateSubmission, toast, onClose }) {
+export default function Reply({ submissionId, submissions, replyTip, toast, onClose }) {
+  const [sending, setSending] = useState(false);
   const submission = submissions.find((item) => item.id === submissionId);
   if (!submission) return null;
 
-  const submit = (event) => {
+  const submit = async (event) => {
     event.preventDefault();
-    updateSubmission(submission.id, { reply: new FormData(event.target).get("notes"), status: "reviewed" });
+    setSending(true);
+    const tip = await replyTip(submission.id, String(new FormData(event.target).get("notes")));
+    setSending(false);
+    if (!tip) return;
     onClose();
     toast(`Reply composed for ${submission.handle} (mock send)`);
   };
@@ -18,11 +23,11 @@ export default function Reply({ submissionId, submissions, updateSubmission, toa
       <form onSubmit={submit}>
         <div className="modal-field">
           <label htmlFor="reply-notes">Reply notes</label>
-          <textarea id="reply-notes" name="notes" required placeholder="Write a short response for the expert..." autoFocus />
+          <textarea id="reply-notes" name="notes" required placeholder="Write a short response for the expert..." defaultValue={submission.reply || ""} autoFocus />
         </div>
         <div className="modal-foot">
           <button type="button" className="btn secondary" onClick={onClose}>Cancel</button>
-          <button type="submit" className="btn primary-action">Compose and send</button>
+          <button type="submit" className="btn primary-action" disabled={sending}>{sending ? "Sending…" : "Compose and send"}</button>
         </div>
       </form>
     </>

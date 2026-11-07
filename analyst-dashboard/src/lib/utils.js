@@ -8,15 +8,7 @@ export const statusClass = {
 export const initialsFor = (name) =>
   name.split(/\s+/).filter(Boolean).map((part) => part[0]).slice(0, 2).join("").toUpperCase();
 
-export const displayRiskCode = (value) => value.toUpperCase().replace(/^R-?(\d{4})$/, "R-$1");
-
 export const typeLabel = (type) => (type === "B" ? "Informal" : "Long-term");
-
-export function makeInviteCode() {
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  const segment = () => Array.from({ length: 4 }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join("");
-  return `AC-${segment()}-${segment().slice(0, 2)}`;
-}
 
 export function parseCSVLine(line) {
   const values = [];
@@ -46,5 +38,24 @@ export async function copyText(value) {
   }
 }
 
-export const nowLabel = () =>
-  new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(new Date());
+export const EXPERTISE_AREAS = ["Economy", "Displacement", "Humanitarian Aid", "Women's Rights", "Conflict"];
+
+const timeFormat = new Intl.DateTimeFormat("en", { hour: "2-digit", minute: "2-digit" });
+const dayFormat = new Intl.DateTimeFormat("en", { day: "numeric", month: "short" });
+const dateTimeFormat = new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" });
+
+// "Today, 09:42", "Yesterday, 17:26", "3 days ago", "2 weeks ago", "4 Oct"
+export function timeAgo(value, { withTime = false } = {}) {
+  if (!value) return "";
+  const date = new Date(value);
+  const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const days = Math.round((startOfDay(new Date()) - startOfDay(date)) / 86400000);
+  const time = withTime ? `, ${timeFormat.format(date)}` : "";
+  if (days <= 0) return `Today${time}`;
+  if (days === 1) return `Yesterday${time}`;
+  if (days < 7) return `${days} days ago`;
+  if (days < 28) return `${Math.floor(days / 7)} week${days < 14 ? "" : "s"} ago`;
+  return dayFormat.format(date);
+}
+
+export const formatDateTime = (value) => (value ? dateTimeFormat.format(new Date(value)) : "");

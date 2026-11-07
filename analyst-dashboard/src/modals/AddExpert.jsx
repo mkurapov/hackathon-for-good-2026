@@ -1,20 +1,34 @@
+import { useState } from "react";
 import { ModalHeader } from "../components/Modal.jsx";
-import { riskCatalogue } from "../data/mock.js";
-import { newLongTermExpert } from "./newExpert.js";
+import { api } from "../lib/api.js";
+import { EXPERTISE_AREAS } from "../lib/utils.js";
 
 const SCREENING = ["education", "partners", "politics", "connection"];
 
-export default function AddExpert({ riskCode, addExperts, openModal, onClose }) {
-  const submit = (event) => {
+export default function AddExpert({ riskCode, risks, reloadExperts, openModal, attempt, onClose }) {
+  const [expertise, setExpertise] = useState([]);
+  const [sending, setSending] = useState(false);
+
+  const toggleArea = (area) =>
+    setExpertise((items) => (items.includes(area) ? items.filter((item) => item !== area) : [...items, area]));
+
+  const submit = async (event) => {
     event.preventDefault();
     const data = new FormData(event.target);
-    const expert = newLongTermExpert({
-      name: String(data.get("name") || ""),
-      riskCode: String(data.get("riskCode")),
-      screening: Object.fromEntries(SCREENING.map((key) => [key, String(data.get(key) || "")])),
-    });
-    addExperts([expert]);
-    openModal("invite", { name: expert.name, invite: expert.invite });
+    const name = String(data.get("name") || "").trim();
+    const code = String(data.get("riskCode"));
+    setSending(true);
+    const invite = await attempt(() =>
+      api.addExpert(code, {
+        name,
+        expertise,
+        screening: Object.fromEntries(SCREENING.map((key) => [key, String(data.get(key) || "").trim()])),
+      })
+    );
+    setSending(false);
+    if (!invite) return;
+    if (code === riskCode) reloadExperts();
+    openModal("invite", { name: name || "the expert", invite: invite.invite_code });
   };
 
   return (
@@ -29,8 +43,24 @@ export default function AddExpert({ riskCode, addExperts, openModal, onClose }) 
           <div className="modal-field full">
             <label htmlFor="expert-risk-code">Risk Code</label>
             <select id="expert-risk-code" name="riskCode" defaultValue={riskCode}>
-              {riskCatalogue.map((r) => <option key={r.code} value={r.code}>{r.code} · {r.title}</option>)}
+              {risks.map((r) => <option key={r.code} value={r.code}>{r.code} · {r.title}</option>)}
             </select>
+          </div>
+          <div className="modal-field full">
+            <label>Areas of expertise</label>
+            <div className="profile-tags" role="group" aria-label="Areas of expertise">
+              {EXPERTISE_AREAS.map((area) => (
+                <button
+                  key={area}
+                  type="button"
+                  className={`filter-pill${expertise.includes(area) ? " selected" : ""}`}
+                  aria-pressed={expertise.includes(area)}
+                  onClick={() => toggleArea(area)}
+                >
+                  {area}
+                </button>
+              ))}
+            </div>
           </div>
           <div className="modal-field full">
             <label htmlFor="expert-education">Educational background</label>
@@ -51,7 +81,9 @@ export default function AddExpert({ riskCode, addExperts, openModal, onClose }) 
         </div>
         <div className="modal-foot">
           <button type="button" className="btn secondary" onClick={onClose}>Cancel</button>
-          <button type="submit" className="btn primary-action">Generate invite code</button>
+          <button type="submit" className="btn primary-action" disabled={sending}>
+            {sending ? "Generating…" : "Generate invite code"}
+          </button>
         </div>
       </form>
     </>
