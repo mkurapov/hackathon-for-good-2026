@@ -1,0 +1,112 @@
+{
+  "manifest_version": 3,
+  "name": "ACAPS Expert Network",
+  "short_name": "ACAPS",
+  "version": "0.1.0",
+  "description": "Share ground truth with ACAPS: quick surveys, notes and comments on news articles about the crises you follow.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "expert-extension@acaps-hackathon.org",
+      "strict_min_version": "128.0",
+      "data_collection_permissions": {
+        "required": [
+          "websiteActivity",
+          "websiteContent",
+          "authenticationInfo"
+        ]
+      }
+    }
+  },
+  "icons": {
+    "48": "icons/icon.svg",
+    "96": "icons/icon.svg"
+  },
+  "permissions": [
+    "storage",
+    "alarms"
+  ],
+  "host_permissions": [
+    "http://localhost/*",
+    "http://127.0.0.1/*"
+  ],
+  "background": {
+    "scripts": [
+      "src/background.js"
+    ],
+    "type": "module"
+  },
+  "action": {
+    "default_title": "ACAPS",
+    "default_icon": "icons/icon.svg",
+    "default_popup": "src/popup/popup.html"
+  },
+  "sidebar_action": {
+    "default_title": "ACAPS",
+    "default_icon": "icons/icon.svg",
+    "default_panel": "src/sidebar/sidebar.html",
+    "open_at_install": false
+  },
+  "commands": {
+    "_execute_sidebar_action": {
+      "suggested_key": {
+        "default": "Alt+Shift+A"
+      },
+      "description": "Open the ACAPS sidebar"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.reuters.com/*",
+        "*://*.apnews.com/*",
+        "*://*.bbc.com/*",
+        "*://*.bbc.co.uk/*",
+        "*://*.aljazeera.com/*",
+        "*://*.theguardian.com/*",
+        "*://*.france24.com/*",
+        "*://*.rfi.fr/*",
+        "*://*.lemonde.fr/*",
+        "*://*.elpais.com/*",
+        "*://*.efectococuyo.com/*",
+        "*://*.reliefweb.int/*",
+        "*://*.thenewhumanitarian.org/*",
+        "*://*.crisisgroup.org/*",
+        "http://localhost/*",
+        "http://127.0.0.1/*"
+      ],
+      "exclude_matches": [
+        "http://localhost/join*",
+        "http://127.0.0.1/join*"
+      ],
+      "js": [
+        "src/content/article.js"
+      ],
+      "css": [
+        "src/content/article.css"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "http://localhost/join*",
+        "http://127.0.0.1/join*"
+      ],
+      "js": [
+        "src/content/invite.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "src/frames/*",
+        "src/lib/*",
+        "icons/*"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../lib/ui.css">
+<link rel="stylesheet" href="frame.css">
+<style>
+  /* Room for the drop shadow (0 3px 6px). article.js knows these numbers to place the bar. */
+  body { padding: 8px 12px 14px; }
+  /* Stacked as blocks (not inline), so the tag sits flush on the bar with no line-height gap. */
+  .wrap { display: flex; flex-direction: column; align-items: flex-start; filter: drop-shadow(0 3px 6px rgba(0,0,0,.25)); }
+  .tag { display: block; background: var(--navy); padding: 4px 5px 2px; border-radius: 3px 3px 0 0; line-height: 0; }
+  .tag .logo { display: block; height: 18px; }
+  .row { display: flex; gap: 4px; background: var(--navy); padding: 4px; border-radius: 0 4px 4px 4px; white-space: nowrap; }
+  .row button { font-weight: 700; font-size: 13px; border-radius: 3px; padding: 5px 10px; cursor: pointer; color: #fff; }
+  .agree { background: var(--green); border: 1px solid var(--green); }
+  .agree:hover { background: #4b8543; }
+  .disagree { background: var(--red); border: 1px solid var(--red); }
+  .disagree:hover { background: #b93232; }
+  .comment { background: transparent; border: 2px solid #fff; padding: 4px 10px !important; }
+  .comment:hover { background: rgba(255,255,255,.15); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="tag"><img class="logo" src="/icons/logo-inverted.svg" alt="ACAPS"></div>
+  <div class="row">
+    <button class="agree" data-action="agree" title="Agree with this passage">Agree</button>
+    <button class="disagree" data-action="disagree" title="Disagree with this passage">Disagree</button>
+    <button class="comment" data-action="comment" title="Comment on this passage">Comment</button>
+  </div>
+</div>
+<script type="module" src="selbar.js"></script>
+</body>
+</html>

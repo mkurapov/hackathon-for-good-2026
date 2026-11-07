@@ -3,17 +3,18 @@
 (function () {
   const CRISES = ['Venezuela', 'Colombia', 'Haiti'];
   const CONTEXT = 'The latest ACAPS update reports "no visible fractures" in the military after Padrino López\'s removal, over 400 opposition leaders released, and tentative signs of short-term improvement.';
+  // Verification (Yes / No) questions come first, then forecasting.
   const QUESTIONS = [
-    { type: 'scale', title: 'Military loyalty & friction', text: 'What ground-level signs suggest military loyalty is shifting, or that there are unreported mutiny risks in key units?', measure: 'Likelihood of internal conflict', lo: 'Very unlikely', hi: 'Very likely' },
-    { type: 'scale', title: 'Humanitarian access', text: 'Despite the reported economic deals and oil shipments, how accessible are food and healthcare for rural populations in high-risk areas compared to early 2026?', measure: 'Urgency / impact on civilians', lo: 'Low', hi: 'Critical' },
-    { type: 'scale', title: 'Opposition safety', text: 'More than 400 opposition leaders were released. Are these releases genuine, or are people still under surveillance or entrapment?', measure: 'Likelihood of political repression', lo: 'Very unlikely', hi: 'Very likely' },
-    { type: 'scale', title: 'US pressure & local compliance', text: 'With US pressure continuing and naval forces still present, do communities in border regions show compliance with new policies, or active resistance?', measure: 'Pressingness of diplomatic friction', lo: 'Low', hi: 'Very high' },
-    { type: 'scale', title: 'Armed groups & stability', text: 'Are there rumours or word-of-mouth of state services collapsing in the next quarter, especially linked to non-state armed group activity?', measure: 'Likelihood of rapid deterioration', lo: 'Very unlikely', hi: 'Very likely' },
     { type: 'yn', title: 'Military friction', text: "Is there active, organised resistance from former Chavista loyalists against Rodríguez's cabinet on the ground?" },
     { type: 'yn', title: 'Food security', text: 'Are rural food supply chains working well enough to prevent spikes in acute malnutrition, compared to pre-2026?' },
     { type: 'yn', title: 'Opposition status', text: 'Are released opposition leaders operating freely, without house arrest or monitoring?' },
     { type: 'yn', title: 'Displacement', text: 'Are displaced people in high-risk areas returning home voluntarily, without pressure from the new authorities?' },
     { type: 'yn', title: 'Naval presence', text: 'Has the US naval presence offshore led to a verified increase in restrictions on humanitarian aid?' },
+    { type: 'scale', title: 'Military loyalty & friction', text: 'What ground-level signs suggest military loyalty is shifting, or that there are unreported mutiny risks in key units?', measure: 'Likelihood of internal conflict', lo: 'Very unlikely', hi: 'Very likely' },
+    { type: 'scale', title: 'Humanitarian access', text: 'Despite the reported economic deals and oil shipments, how accessible are food and healthcare for rural populations in high-risk areas compared to early 2026?', measure: 'Urgency / impact on civilians', lo: 'Low', hi: 'Critical' },
+    { type: 'scale', title: 'Opposition safety', text: 'More than 400 opposition leaders were released. Are these releases genuine, or are people still under surveillance or entrapment?', measure: 'Likelihood of political repression', lo: 'Very unlikely', hi: 'Very likely' },
+    { type: 'scale', title: 'US pressure & local compliance', text: 'With US pressure continuing and naval forces still present, do communities in border regions show compliance with new policies, or active resistance?', measure: 'Pressingness of diplomatic friction', lo: 'Low', hi: 'Very high' },
+    { type: 'scale', title: 'Armed groups & stability', text: 'Are there rumours or word-of-mouth of state services collapsing in the next quarter, especially linked to non-state armed group activity?', measure: 'Likelihood of rapid deterioration', lo: 'Very unlikely', hi: 'Very likely' },
   ];
   const TOTAL = QUESTIONS.length;
 
@@ -27,7 +28,7 @@
     contact: 'idle',          // 'idle' | 'form' | 'sent'
     contactNote: '',
     // Survey starts part-done, to show "continue where you left off".
-    survey: { step: 3, answers: { 0: '4', 1: '3', 2: 'skip' }, comments: {}, showContext: false, submitted: false },
+    survey: { step: 3, answers: { 0: 'Yes', 1: 'No', 2: 'skip' }, comments: {}, showContext: false, submitted: false },
     sidebarView: null,        // null (closed) | 'home' | 'survey' | 'feedback'
     feedback: { stance: null, highlights: [], comment: '', sent: false }, // stance: null | 'agree' | 'disagree'
   };
@@ -219,7 +220,7 @@
       <div class="ext-foot">
         <button class="btn secondary sm" data-back ${st === 0 ? 'style="visibility:hidden"' : ''}>← Back</button>
         <span class="small muted" style="flex:1; text-align:center">${st + 1} of ${TOTAL}</span>
-        <button class="btn sm" data-next ${a === undefined ? 'disabled' : ''}>${st === TOTAL - 1 ? 'Submit' : 'Next →'}</button>
+        <button class="btn sm" data-next>${st === TOTAL - 1 ? 'Submit' : 'Next →'}</button>
       </div>`;
 
     q(root, '[data-later]').onclick = closeSidebar;
@@ -240,7 +241,7 @@
       if (qn.type === 'scale' && /^[1-5]$/.test(k)) answer(k);
       else if (qn.type === 'yn' && (k === 'y' || k === 'n')) answer(k === 'y' ? 'Yes' : 'No');
       else if (k === 'd') answer('skip');
-      else if (k === 'enter' && !next.disabled) goTo(st + 1);
+      else if (k === 'enter') goTo(st + 1);
     };
     if (!root.contains(document.activeElement)) root.focus({ preventScroll: true });
   }

@@ -1,4 +1,5 @@
 import hashlib
+import html
 import json
 import os
 import secrets
@@ -6,7 +7,8 @@ from datetime import datetime, timezone
 from typing import Annotated, Literal
 
 import db
-from fastapi import Depends, FastAPI, Header, HTTPException, Response, status
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Response, status
+from fastapi.responses import HTMLResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import AnyUrl, BaseModel, Field, StrictBool, StrictInt, model_validator
 
@@ -69,14 +71,29 @@ class ExpertRegistered(Expert):
     token: str
 
 
+class ExpertProfile(Expert):
+    group_name: str
+    risk_id: str
+    risk_title: str | None = None
+
+
+class InvitePreview(BaseModel):
+    group_name: str
+    risk_id: str
+    risk_title: str | None = None
+    country_iso3: str | None = None
+
+
 class LikertAnswer(BaseModel):
     question_id: str
     value: Annotated[StrictInt, Field(ge=1, le=5)] | None
+    comment: str | None = Field(default=None, max_length=2000)
 
 
 class BinaryAnswer(BaseModel):
     question_id: str
     value: StrictBool | None
+    comment: str | None = Field(default=None, max_length=2000)
 
 
 class SurveyResponseInput(BaseModel):
@@ -126,11 +143,28 @@ class ArticleMatch(BaseModel):
 class ArticleCommentCreate(BaseModel):
     url: AnyUrl
     risk_id: str
-    text: str = Field(max_length=5000)
+    text: str = Field(default="", max_length=5000)
+    stance: Literal["agree", "disagree"] | None = None
+    quote: str | None = Field(default=None, max_length=2000)
+
+    @model_validator(mode="after")
+    def require_content(self):
+        if not self.text.strip() and self.stance is None and not (self.quote or "").strip():
+            raise ValueError("Provide text, a stance or a quote")
+        return self
 
 
 class ArticleComment(ArticleCommentCreate):
     comment_id: str
+    created_at: datetime
+
+
+class ContactRequestCreate(BaseModel):
+    note: str | None = Field(default=None, max_length=1000)
+
+
+class ContactRequest(ContactRequestCreate):
+    request_id: str
     created_at: datetime
 
 
@@ -169,6 +203,15 @@ def _require_analyst_key(
         raise HTTPException(status_code=401, detail="Missing or invalid analyst key")
 
 
+def _risk_title(conn, risk_id: str) -> str | None:
+    """Title of a risk, taken from its most recent survey (None until a survey exists)."""
+    row = conn.execute(
+        "SELECT risk_title FROM surveys WHERE risk_id = ? ORDER BY generated_at DESC LIMIT 1",
+        (risk_id,),
+    ).fetchone()
+    return row["risk_title"] if row else None
+
+
 def _expert_response(row: dict) -> Expert:
     return Expert(
         expert_id=row["expert_id"],
@@ -200,6 +243,37 @@ def create_group(
             group.country_iso3,
         )
     return group
+
+
+@app.get("/invites/{invite_code}", response_model=InvitePreview, tags=["Registration"])
+def preview_invite(invite_code: str) -> InvitePreview:
+    """Shows which group and risk an invite code belongs to, so the expert can confirm before joining."""
+    with db.connect() as conn:
+        group = conn.execute(
+            "SELECT name, risk_id, country_iso3 FROM groups WHERE invite_code = ?",
+            (invite_code,),
+        ).fetchone()
+        if group is None:
+            raise HTTPException(status_code=404, detail="Invite code not found")
+        return InvitePreview(
+            group_name=group["name"],
+            risk_id=group["risk_id"],
+            risk_title=_risk_title(conn, group["risk_id"]),
+            country_iso3=group["country_iso3"],
+        )
+
+
+@app.get("/join", response_class=HTMLResponse, include_in_schema=False)
+def join_page(code: Annotated[str, Query(max_length=200)] = "") -> HTMLResponse:
+    """Landing page for invite links. The ACAPS extension reads the code from this page."""
+    safe = html.escape(code)
+    return HTMLResponse(f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>Join ACAPS experts</title>
+<style>body{{font-family:system-ui,sans-serif;max-width:560px;margin:60px auto;padding:0 16px;color:#212121}}
+h1{{color:#004b78}}code{{background:#f2f2f2;padding:2px 6px;border-radius:3px}}</style></head>
+<body><h1>You're invited to the ACAPS expert network</h1>
+<p id="acaps-invite" data-code="{safe}">Install the ACAPS extension for Firefox, then reload this page.
+Your invite code is <code>{safe}</code>.</p></body></html>""")
 
 
 @app.post("/experts", response_model=ExpertRegistered, status_code=status.HTTP_201_CREATED, tags=["Registration"])
@@ -234,6 +308,22 @@ def register_expert(body: ExpertRegistration) -> ExpertRegistered:
             (expert_id,),
         ).fetchone()
     return ExpertRegistered(**_expert_response(dict(row)).model_dump(), token=token)
+
+
+@app.get("/experts/me", response_model=ExpertProfile, tags=["Registration"])
+def get_expert(expert: Annotated[dict, Depends(_expert_from_token)]) -> ExpertProfile:
+    with db.connect() as conn:
+        group = conn.execute(
+            "SELECT name, risk_id FROM groups WHERE group_id = ?",
+            (expert["group_id"],),
+        ).fetchone()
+        risk_title = _risk_title(conn, group["risk_id"])
+    return ExpertProfile(
+        **_expert_response(expert).model_dump(),
+        group_name=group["name"],
+        risk_id=group["risk_id"],
+        risk_title=risk_title,
+    )
 
 
 @app.patch("/experts/me", response_model=Expert, tags=["Registration"])
@@ -272,7 +362,7 @@ def get_current_survey(
     with db.connect() as conn:
         group = conn.execute("SELECT risk_id FROM groups WHERE group_id = ?", (expert["group_id"],)).fetchone()
         survey = conn.execute(
-            """SELECT survey_id, payload FROM surveys
+            """SELECT survey_id, risk_id, risk_title, based_on_update, generated_at, payload FROM surveys
                WHERE risk_id = ? ORDER BY generated_at DESC LIMIT 1""",
             (group["risk_id"],),
         ).fetchone()
@@ -284,10 +374,13 @@ def get_current_survey(
                WHERE survey_id = ? AND expert_id = ? AND status = 'submitted'""",
             (survey["survey_id"], expert_id),
         ).fetchone()
+        if submitted is None:
+            payload = json.loads(survey["payload"])
+            payload.update(db.survey_questions(conn, survey["survey_id"]))
     if submitted is not None:
         response.status_code = status.HTTP_204_NO_CONTENT
         return None
-    return json.loads(survey["payload"])
+    return payload
 
 
 @app.put(
@@ -323,9 +416,9 @@ def put_survey_response(
         if existing is not None and existing["status"] == "submitted":
             raise HTTPException(status_code=409, detail="Response was already submitted")
 
-        survey_payload = json.loads(survey["payload"])
-        likert_ids = {question["id"] for question in survey_payload["likert"]}
-        binary_ids = {question["id"] for question in survey_payload["binary"]}
+        survey_questions = db.survey_questions(conn, survey_id)
+        likert_ids = {question["id"] for question in survey_questions["likert"]}
+        binary_ids = {question["id"] for question in survey_questions["binary"]}
         if any(answer.question_id not in likert_ids for answer in body.likert):
             raise HTTPException(status_code=422, detail="Unknown Likert question ID")
         if any(answer.question_id not in binary_ids for answer in body.binary):
@@ -424,16 +517,44 @@ def comment_on_article(
     )
     with db.connect() as conn:
         conn.execute(
-            """INSERT INTO article_comments (comment_id, expert_id, url, risk_id, text, created_at)
-               VALUES (?, ?, ?, ?, ?, ?)""",
+            """INSERT INTO article_comments
+               (comment_id, expert_id, url, risk_id, text, stance, quote, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 comment.comment_id,
                 expert["expert_id"],
                 str(comment.url),
                 comment.risk_id,
                 comment.text,
+                comment.stance,
+                comment.quote,
                 comment.created_at.isoformat(),
             ),
         )
         conn.commit()
     return comment
+
+
+@app.post(
+    "/contact-requests",
+    response_model=ContactRequest,
+    status_code=status.HTTP_201_CREATED,
+    tags=["Contributions"],
+)
+def request_contact(
+    body: ContactRequestCreate,
+    expert: Annotated[dict, Depends(_expert_from_token)],
+) -> ContactRequest:
+    """The expert asks ACAPS to get in touch, using the contact details ACAPS already holds."""
+    request = ContactRequest(
+        note=(body.note or "").strip() or None,
+        request_id=f"contact_{secrets.token_urlsafe(12)}",
+        created_at=datetime.now(timezone.utc),
+    )
+    with db.connect() as conn:
+        conn.execute(
+            "INSERT INTO contact_requests (request_id, expert_id, note, created_at) VALUES (?, ?, ?, ?)",
+            (request.request_id, expert["expert_id"], request.note, request.created_at.isoformat()),
+        )
+        conn.commit()
+    return request

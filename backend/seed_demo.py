@@ -1,0 +1,66 @@
+# seed_demo.py: create a demo group and survey so the extension can be tried without the LLM
+# or ACAPS credentials. Safe to run more than once.
+#
+#   python seed_demo.py            -> prints the invite code and invite link
+#   python seed_demo.py --reset    -> deletes the demo group's experts and answers first
+import argparse
+from datetime import datetime, timezone
+
+import db
+from questions import BinaryQuestion, LikertQuestion, Survey
+
+GROUP_ID = "grp_demo_venezuela"
+INVITE_CODE = "DEMO-VEN-2026"
+RISK_ID = "R9001"
+RISK_TITLE = "Venezuela: instability after the political transition"
+BASED_ON_UPDATE = "01/11/2026"
+
+LIKERT = [
+    ("likelihood", "How likely is it that military units in Venezuela turn against the new cabinet in the next three months?"),
+    ("urgency", "How urgent is the lack of food and healthcare for rural communities in high-risk areas of Venezuela, compared to early 2026?"),
+    ("likelihood", "How likely is it that recently released opposition leaders in Venezuela are still under surveillance or pressure?"),
+    ("scale", "How strong is local resistance to the new policies in Venezuela's border regions?"),
+    ("likelihood", "How likely is it that state services collapse in parts of Venezuela in the next quarter because of armed group activity?"),
+]
+BINARY = [
+    "Is there organised resistance from former Chavista loyalists against the new cabinet where you are?",
+    "Are rural food supply chains in Venezuela working well enough to prevent a rise in acute malnutrition?",
+    "Are released opposition leaders in Venezuela able to operate freely, without house arrest or monitoring?",
+    "Are displaced people in high-risk areas of Venezuela returning home voluntarily, without pressure from the authorities?",
+    "Has the US naval presence off Venezuela's coast made it harder to deliver humanitarian aid?",
+]
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--reset", action="store_true", help="remove demo experts and their answers first")
+    args = parser.parse_args()
+
+    survey = Survey(
+        survey_id=f"{RISK_ID}_2026-11-01",
+        risk_id=RISK_ID,
+        risk_title=RISK_TITLE,
+        based_on_update=BASED_ON_UPDATE,
+        generated_at=datetime.now(timezone.utc),
+        likert=[LikertQuestion(id=f"L{i}", text=t, dimension=d) for i, (d, t) in enumerate(LIKERT, 1)],
+        binary=[BinaryQuestion(id=f"B{i}", text=t) for i, t in enumerate(BINARY, 1)],
+    )
+
+    with db.connect() as conn:
+        if args.reset:
+            experts = [r["expert_id"] for r in conn.execute("SELECT expert_id FROM experts WHERE group_id = ?", (GROUP_ID,))]
+            for table in ("responses", "notes", "article_comments", "contact_requests"):
+                conn.executemany(f"DELETE FROM {table} WHERE expert_id = ?", [(e,) for e in experts])
+            conn.execute("DELETE FROM experts WHERE group_id = ?", (GROUP_ID,))
+            conn.commit()
+        if conn.execute("SELECT 1 FROM groups WHERE group_id = ?", (GROUP_ID,)).fetchone() is None:
+            db.add_group(conn, GROUP_ID, "Venezuela expert panel (demo)", RISK_ID, INVITE_CODE, "VEN")
+        if not db.survey_exists(conn, survey.survey_id):
+            db.save_survey(conn, survey)
+
+    print(f"Invite code: {INVITE_CODE}")
+    print(f"Invite link: http://localhost:8000/join?code={INVITE_CODE}")
+
+
+if __name__ == "__main__":
+    main()

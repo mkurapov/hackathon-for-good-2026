@@ -150,13 +150,11 @@ mark.acaps-hl.disagree { background: #f6d8d8; border-bottom-color: var(--red); }
 .toast .t-more { display: flex; gap: 14px; margin-top: 10px; font-size: 14px; }
 .toast .close { margin-left: auto; background: none; border: 0; font-size: 18px; color: var(--muted); cursor: pointer; line-height: 1; }
 @keyframes slide-in { from { transform: translateY(16px); opacity: 0; } }
-.sel-bar { position: absolute; z-index: 6; display: flex; flex-direction: column; gap: 3px; background: var(--navy); opacity: 1; border: 1px solid var(--navy); border-radius: 4px; padding: 4px; box-shadow: 0 3px 12px rgba(0,0,0,.18); white-space: nowrap; }
-.sel-bar::before, .sel-bar::after { content: ""; position: absolute; left: 50%; transform: translateX(-50%); border: 6px solid transparent; border-bottom: 0; }
-.sel-bar::before { bottom: -7px; border-top-color: var(--navy); }
-.sel-bar::after { bottom: -6px; border-top-color: var(--navy); }
-.sel-logo { font-family: "Bebas Neue", sans-serif; font-size: 16px; letter-spacing: 1px; line-height: 1; color: #fff; padding: 2px 2px 0; }
-.sel-logo span { color: var(--cyan); }
-.sel-actions { display: flex; gap: 4px; }
+/* Selection bar: a small ACAPS tab sitting on top of a navy row of three buttons. */
+.sel-bar { position: absolute; z-index: 6; display: flex; flex-direction: column; align-items: flex-start; gap: 0; white-space: nowrap; filter: drop-shadow(0 3px 8px rgba(0,0,0,.22)); }
+.sel-tag { background: var(--navy); color: #fff; font-family: "Bebas Neue", sans-serif; font-size: 13px; letter-spacing: .8px; line-height: 1; padding: 4px 7px 2px; border-radius: 3px 3px 0 0; }
+.sel-tag span { color: var(--cyan); }
+.sel-row { display: flex; gap: 4px; background: var(--navy); padding: 4px; border-radius: 0 4px 4px 4px; }
 .sel-bar button { font-family: "Roboto Condensed", sans-serif; font-weight: 700; font-size: 13px; border-radius: 3px; padding: 5px 10px; cursor: pointer; }
 .sel-bar .agree { background: var(--green); border: 1px solid var(--green); color: #fff; }
 .sel-bar .disagree { background: var(--red); border: 1px solid var(--red); color: #fff; }

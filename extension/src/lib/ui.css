@@ -1,0 +1,123 @@
+/* Styles for every extension page (popup, sidebar, onboarding, injected frames).
+   Colours, fonts and logo follow acaps.org. The fonts are bundled in ./fonts (copied from
+   acaps.org) so nothing is fetched from third parties at runtime. */
+@font-face { font-family: "Bebas Neue"; font-weight: 400; font-style: normal; font-display: swap; src: url(fonts/BebasNeue-Regular.woff2) format("woff2"); }
+@font-face { font-family: "Bebas Neue"; font-weight: 700; font-style: normal; font-display: swap; src: url(fonts/BebasNeue-Bold.woff2) format("woff2"); }
+@font-face { font-family: "Roboto Condensed"; font-weight: 300; font-style: normal; font-display: swap; src: url(fonts/RobotoCondensed-Light.woff2) format("woff2"); }
+@font-face { font-family: "Roboto Condensed"; font-weight: 400; font-style: normal; font-display: swap; src: url(fonts/RobotoCondensed-Regular.woff2) format("woff2"); }
+@font-face { font-family: "Roboto Condensed"; font-weight: 400; font-style: italic; font-display: swap; src: url(fonts/RobotoCondensed-Italic.woff2) format("woff2"); }
+@font-face { font-family: "Roboto Condensed"; font-weight: 700; font-style: normal; font-display: swap; src: url(fonts/RobotoCondensed-Bold.woff2) format("woff2"); }
+:root {
+  --navy: #004b78;
+  --navy-dark: #003c60;
+  --cyan: #0096ba;
+  --red: #d43d3d;
+  --green: #5c9b53;
+  --text: #212121;
+  --muted: #6c6c6c;
+  --line: #dedede;
+  --bg: #f2f2f2;
+  --bg-soft: #f8f8f8;
+  --white: #fff;
+  --font: "Roboto Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Bebas Neue", "Oswald", "Arial Narrow", Impact, sans-serif;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body { color: var(--text); font-family: var(--font); font-size: 15px; background: var(--white); }
+button { font-family: inherit; }
+
+/* ---------- Frame ---------- */
+.ext-head { background: var(--navy); color: #fff; display: flex; align-items: center; gap: 10px; padding: 8px 14px; flex: none; }
+.logo { display: block; height: 16px; width: auto; flex: none; }
+.ext-head .sub { font-size: 12px; opacity: .85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.ext-head .spacer { flex: 1; }
+.icon-btn { background: transparent; border: 1px solid rgba(255,255,255,.35); color: #fff; border-radius: 3px; font-size: 12px; padding: 3px 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+.icon-btn:hover { background: rgba(255,255,255,.1); }
+.icon-btn svg { width: 14px; height: 14px; }
+.ext-body { padding: 14px; }
+.ext-foot { border-top: 1px solid var(--line); padding: 10px 14px; display: flex; gap: 8px; align-items: center; background: var(--bg-soft); flex: none; }
+.ext-foot.block { display: block; }
+
+/* Popup: fixed width. Sidebar and full pages: fill the space. */
+.popup { width: 360px; }
+.panel { height: 100vh; display: flex; flex-direction: column; }
+.panel > .ext-body { flex: 1; overflow-y: auto; }
+
+h2, h3 { font-family: var(--font-display); font-weight: 700; color: var(--navy); margin: 0 0 8px; letter-spacing: .3px; }
+h3 { font-size: 20px; }
+.label { font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); font-weight: 700; margin: 0 0 6px; }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+.stack > * + * { margin-top: 10px; }
+.error { color: var(--red); font-size: 13px; margin: 6px 0 0; }
+.notice { background: #fdf3e1; border: 1px solid #f3dcae; border-radius: 4px; padding: 6px 10px; font-size: 13px; margin-bottom: 12px; }
+
+/* ---------- Controls ---------- */
+.btn { font-weight: 700; font-size: 15px; border-radius: 3px; padding: 8px 14px; cursor: pointer; border: 1px solid var(--navy); background: var(--navy); color: #fff; }
+.btn:hover { background: var(--navy-dark); }
+.btn.secondary { background: #fff; color: var(--navy); }
+.btn.secondary:hover { background: #e6edf2; }
+.btn.cyan { background: var(--cyan); border-color: var(--cyan); }
+.btn.cyan:hover { background: #0083a3; }
+.btn.agree { background: var(--green); border-color: var(--green); }
+.btn.agree:hover { background: #4b8543; }
+.btn.disagree { background: var(--red); border-color: var(--red); }
+.btn.disagree:hover { background: #b93232; }
+.btn.block { width: 100%; }
+.btn.sm { padding: 5px 10px; font-size: 13px; }
+.btn:disabled { opacity: .4; cursor: default; }
+.link { color: var(--cyan); text-decoration: none; font-weight: 700; cursor: pointer; background: none; border: 0; font-size: inherit; padding: 0; }
+.link:hover { text-decoration: underline; }
+
+input[type=text], textarea {
+  width: 100%; font: inherit; border: 1px solid var(--line); border-radius: 3px; padding: 8px 10px; background: #fff; color: var(--text);
+}
+textarea { resize: vertical; min-height: 80px; }
+input:focus, textarea:focus { outline: 2px solid rgba(0,150,186,.35); border-color: var(--cyan); }
+.code-input { font-family: ui-monospace, Menlo, monospace; font-size: 18px; letter-spacing: 3px; text-align: center; text-transform: uppercase; }
+
+.card { border: 1px solid var(--line); border-radius: 4px; padding: 12px; margin-bottom: 12px; background: #fff; }
+.card.info { border-left: 4px solid var(--cyan); }
+.card.invite { background: #eef7fa; border-color: #cfe7ef; border-left: 4px solid var(--cyan); }
+.mini-progress { height: 4px; background: #d6ecf2; border-radius: 2px; overflow: hidden; }
+.mini-progress > div { height: 100%; background: var(--cyan); }
+.chip { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 10px; background: #e6edf2; color: var(--navy); font-weight: 700; margin: 0 4px 4px 0; }
+
+.success { text-align: center; padding: 24px 14px; }
+.success .tick { width: 54px; height: 54px; border-radius: 50%; background: var(--green); color: #fff; display: grid; place-items: center; margin: 0 auto 12px; }
+.success .tick svg { width: 28px; height: 28px; }
+
+/* ---------- Survey ---------- */
+.progress { height: 4px; background: var(--bg); flex: none; }
+.progress > div { height: 100%; background: var(--cyan); transition: width .2s; }
+.q-num { font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--cyan); font-weight: 700; margin-bottom: 8px; display: flex; justify-content: space-between; }
+.q-num .link { font-weight: 400; text-transform: none; letter-spacing: 0; font-size: 13px; }
+.q-body { font-size: 18px; line-height: 1.4; color: var(--text); margin: 0 0 20px; font-weight: 700; }
+.context-box { background: var(--bg-soft); border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px; font-size: 13px; margin-bottom: 12px; }
+.answers { display: flex; gap: 4px; }
+.answers button { flex: 1; font-weight: 700; font-size: 18px; padding: 14px 0; border: 1px solid var(--line); background: #fff; border-radius: 3px; cursor: pointer; color: var(--text); }
+.answers button:hover { border-color: var(--cyan); }
+.answers button.on { background: var(--navy); color: #fff; border-color: var(--navy); }
+.answers button.skip { flex: 1.4; font-size: 12px; font-weight: 400; line-height: 1.2; color: var(--muted); }
+.answers button.skip.on { background: var(--muted); border-color: var(--muted); color: #fff; }
+.legend { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin: 4px 0 0; padding-right: 28%; }
+
+/* ---------- Agree / Disagree ---------- */
+.stance { display: flex; gap: 6px; }
+.stance button { flex: 1; font-weight: 700; font-size: 15px; padding: 9px 0; border-radius: 3px; cursor: pointer; background: #fff; }
+.stance .agree { border: 1px solid var(--green); color: var(--green); }
+.stance .disagree { border: 1px solid var(--red); color: var(--red); }
+.stance .agree.on { background: var(--green); color: #fff; }
+.stance .disagree.on { background: var(--red); color: #fff; }
+.stance-tag { display: inline-block; font-size: 11px; font-weight: 700; border-radius: 9px; padding: 1px 7px; margin-bottom: 4px; color: #fff; }
+.stance-tag.agree { background: var(--green); }
+.stance-tag.disagree { background: var(--red); }
+.quote { margin: 0 0 6px; padding: 6px 10px; border-left: 3px solid var(--cyan); background: var(--bg-soft); font-size: 13px; font-style: italic; }
+.highlight { position: relative; margin: 6px 0 0; padding: 8px 10px; }
+.highlight textarea { min-height: 50px; font-size: 14px; }
+.highlight .remove { position: absolute; top: 4px; right: 8px; color: var(--muted); font-size: 18px; font-weight: 400; }
+
+.choice { display: flex; gap: 8px; align-items: flex-start; padding: 8px 0; cursor: pointer; }
+.choice input { margin-top: 3px; }

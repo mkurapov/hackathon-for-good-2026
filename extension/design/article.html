@@ -6,7 +6,7 @@
 <title>ACAPS Article Prototype</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Roboto+Condensed:wght@300;400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="shared.css?v=7">
+<link rel="stylesheet" href="shared.css?v=10">
 </head>
 <body>
 
@@ -23,7 +23,7 @@
       <div class="dots"><i></i><i></i><i></i></div>
       <div class="url">example-news.com/americas/venezuela-military-reshuffle-2026</div>
       <span class="vpn">VPN on</span>
-      <button class="ext-icon" id="extIcon" title="ACAPS">A<span class="badge" id="badge">1</span></button>
+      <button class="ext-icon" id="extIcon" title="ACAPS"><img src="../icons/pin-white.svg" alt="" style="height:18px; display:block"><span class="badge" id="badge">1</span></button>
     </div>
     <div class="b-content">
       <div class="page-area" id="pageArea">
@@ -62,8 +62,8 @@
           </div>
         </div>
         <div class="sel-bar" id="selBtn" hidden>
-          <div class="sel-logo">ACAPS<span>.</span></div>
-          <div class="sel-actions">
+          <div class="sel-tag">ACAPS<span>.</span></div>
+          <div class="sel-row">
             <button class="agree" data-sel-stance="agree" title="Agree with this passage">Agree</button>
             <button class="disagree" data-sel-stance="disagree" title="Disagree with this passage">Disagree</button>
             <button class="comment" id="selComment">Comment</button>
@@ -89,7 +89,7 @@
   </div>
 </div>
 
-<script src="prototype.js?v=7"></script>
+<script src="prototype.js?v=10"></script>
 <script>
   const $ = id => document.getElementById(id);
 
@@ -151,7 +151,7 @@
       const r = range.getBoundingClientRect(), p = posIn(r);
       selBtn.hidden = false;
       selBtn.style.left = Math.max(8, p.left + r.width / 2 - selBtn.offsetWidth / 2) + 'px';
-      selBtn.style.top = (p.top - selBtn.offsetHeight - 9) + 'px';
+      selBtn.style.top = (p.top - selBtn.offsetHeight - 6) + 'px';
     }, 0);
   });
 

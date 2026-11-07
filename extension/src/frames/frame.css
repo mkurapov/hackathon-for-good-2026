@@ -1,0 +1,5 @@
+/* Shared by the injected frames: a transparent page around a floating card. */
+html, body { background: transparent; overflow: hidden; }
+/* Each frame sets its own body padding: enough clear space for its card's shadow, which would
+   otherwise be cut off at the frame's edge. */
+body { display: inline-block; }

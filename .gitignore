@@ -3,3 +3,4 @@ __pycache__/
 */prova.py
 .env
 *.csv
+backend/groundtruth.db
