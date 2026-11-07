@@ -1,8 +1,10 @@
-import { initialsFor } from "../lib/utils.js";
+import { initialsFor, timeAgo } from "../lib/utils.js";
 
 const byUnreviewedFirst = (a, b) => Number(b.status === "unreviewed") - Number(a.status === "unreviewed");
 
-export default function Overview({ risk, questions, surveyStatus, submissions, unreviewedCount, goTo }) {
+export default function Overview({ risk, survey, submissions, unreviewedCount, goTo }) {
+  const questions = survey?.questions || [];
+  const surveyStatus = survey?.status;
   const latest = submissions.filter((item) => item.riskCode === risk.code).sort(byUnreviewedFirst).slice(0, 3);
 
   return (
@@ -14,11 +16,20 @@ export default function Overview({ risk, questions, surveyStatus, submissions, u
         <article className="priority-survey">
           <div className="priority-survey-copy">
             <span className="priority-kicker">
-              NEW SURVEY <span className={`status-badge draft-badge${surveyStatus === "Published" ? " published-badge" : ""}`}>{surveyStatus}</span>
+              NEW SURVEY {survey && <span className={`status-badge draft-badge${surveyStatus === "Published" ? " published-badge" : ""}`}>{surveyStatus}</span>}
             </span>
-            <h2>Questions ready for your review</h2>
-            <p>{questions.length} questions based on the latest report update, <strong>{risk.basedOnUpdate}</strong>.</p>
-            <button className="btn survey-cta" onClick={() => goTo("survey")}>Review survey <span>→</span></button>
+            {survey ? (
+              <>
+                <h2>{surveyStatus === "Published" ? `Survey published · ${survey.responseCount} responses` : "Questions ready for your review"}</h2>
+                <p>{questions.length} questions based on the latest report update{survey.basedOnUpdate && <>, <strong>{survey.basedOnUpdate}</strong></>}.</p>
+                <button className="btn survey-cta" onClick={() => goTo("survey")}>Review survey <span>→</span></button>
+              </>
+            ) : (
+              <>
+                <h2>No survey drafted yet</h2>
+                <p>The daily job has not prepared questions for {risk.code}.</p>
+              </>
+            )}
           </div>
           <div className="survey-mark" aria-hidden="true">
             <span>{questions.filter((q) => q.kind === "Likert").length}</span><small>LIKERT</small>
@@ -43,7 +54,7 @@ export default function Overview({ risk, questions, surveyStatus, submissions, u
                   <strong>{item.handle}</strong>
                   <small>{item.body.slice(0, 80)}{item.body.length > 80 ? "…" : ""}</small>
                 </span>
-                <time>{item.status === "unreviewed" ? "NEW" : item.date.split(",")[0]}</time>
+                <time>{item.status === "unreviewed" ? "NEW" : timeAgo(item.createdAt)}</time>
               </div>
             ))}
           </div>

@@ -8,6 +8,7 @@ import sys
 
 import db
 from data import load_risks
+from latest import latest_context
 from questions import generate_survey, survey_id_for
 
 log = logging.getLogger("daily_job")
@@ -17,6 +18,21 @@ RISK_ID = "R1011"
 
 # Risks that already resolved: nothing left for experts to forecast or update
 CLOSED_STATUSES = {"materialised", "not materialised"}
+
+
+def save_risk_details(conn, risk: dict) -> None:
+    """Keep the title, rating and newest update the analyst dashboard shows for this risk."""
+    ctx = latest_context(risk, max_updates=1)
+    summary = ctx["updates"][0]["text"] if ctx["updates"] else ctx["background"]
+    db.upsert_risk(
+        conn,
+        risk["risk_id"],
+        risk["risk_title"],
+        risk.get("country"),
+        risk.get("risk_level"),
+        risk.get("risk_trend"),
+        summary,
+    )
 
 
 def run(force: bool = False) -> dict:
@@ -36,6 +52,8 @@ def run(force: bool = False) -> dict:
                 log.warning("%s: not found in the ACAPS API, skipping", risk_id)
                 stats["missing"] += 1
                 continue
+
+            save_risk_details(conn, risk)
 
             if (
                 not force

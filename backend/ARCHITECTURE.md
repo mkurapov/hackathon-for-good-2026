@@ -60,6 +60,7 @@ flowchart TD
 | `db.py` | SQLite storage: groups, experts, surveys, normalized `survey_questions`, responses, notes, article comments, contact requests | Questions are indexed by `risk_id` and `based_on_update`; expert tokens are stored hashed | |
 | `seed_demo.py` | Creates a demo group (invite code `DEMO-VEN-2026`) and survey, without the LLM, for trying the extension | `--reset` removes demo experts and answers | |
 | `daily_job.py` | Demo orchestrator for hardcoded risk `R1011`; skips existing surveys and closed risks, otherwise generates and saves | One failing risk does not stop the job | |
+| `analyst_api.py` | `/analyst/*` routes for the analyst dashboard: risks, expert onboarding (personal invite codes), survey review/edit/publish, tips inbox, mock mass notifications | Needs `ANALYST_API_KEY`; the dashboard's proxy (Vite in dev, nginx in Docker) adds the `X-Analyst-Key` header | |
 | `api.py` | FastAPI app; authentication, request validation, and API routes backed by SQLite | Article matching currently checks exact risk-ID/title text matches | |
 | `openapi.yaml` | API contract | Assumptions are marked in the file | |
 | `SPEC_1.md` | Team requirements | | |

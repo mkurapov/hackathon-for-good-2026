@@ -3,7 +3,7 @@ import { VIEWS } from "../lib/views.js";
 export default function Sidebar({ view, goTo, unreviewedCount, mobileOpen }) {
   return (
     <aside className={`sidebar-nav${mobileOpen ? " mobile-open" : ""}`}>
-      <a className="brand" href="#overview" onClick={(event) => { event.preventDefault(); goTo("overview"); }} aria-label="ACAPS analyst workspace home">
+      <a className="brand" href="/" onClick={(event) => { event.preventDefault(); goTo("overview"); }} aria-label="ACAPS analyst workspace home">
         <span className="brand-name">ACAPS<span>.</span></span>
         <span className="brand-caption">Analyst workspace</span>
       </a>

@@ -1,15 +1,13 @@
 import { useEffect, useState } from "react";
-import { riskCatalogue } from "../data/mock.js";
 
-const countries = [...new Set(riskCatalogue.flatMap((risk) => risk.countries))].sort((a, b) => a.localeCompare(b));
-
-export default function Topbar({ section, risk, onRiskChange, onToggleMenu, toast }) {
+export default function Topbar({ section, risk, risks, onRiskChange, onToggleMenu, toast }) {
+  const countries = [...new Set(risks.flatMap((item) => item.countries))].sort((a, b) => a.localeCompare(b));
   const [country, setCountry] = useCountry(risk);
-  const countryRisks = riskCatalogue.filter((item) => item.countries.includes(country));
+  const countryRisks = risks.filter((item) => item.countries.includes(country));
 
   const changeCountry = (value) => {
     setCountry(value);
-    const first = riskCatalogue.find((item) => item.countries.includes(value));
+    const first = risks.find((item) => item.countries.includes(value));
     if (first && first.code !== risk.code) onRiskChange(first.code);
   };
 
@@ -32,7 +30,7 @@ export default function Topbar({ section, risk, onRiskChange, onToggleMenu, toas
         </div>
         <div className="risk-title-preview" title={risk.title} aria-live="polite">{risk.title}</div>
         <span className="topbar-divider" />
-        <button className="help-button" title="About this workspace" aria-label="About this workspace" onClick={() => toast("Analyst workspace · internal mockup · delivery is simulated")}>?</button>
+        <button className="help-button" title="About this workspace" aria-label="About this workspace" onClick={() => toast("Analyst workspace · notification and email delivery is simulated")}>?</button>
       </div>
     </header>
   );
