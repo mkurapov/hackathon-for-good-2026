@@ -8,6 +8,15 @@ This is a browser extension for humanitarian experts that will provide regular f
 
 The typical profiles of humanitarian experts are:
 
+- User registration:
+1. ACAPS sends a link (random code) that is linked to an agent and within a conflict
+
+
+FRONTEND SPEC STEPS
+6. Optional: allow user to select if they would like to answer open-ended questions
+7. If above yes: ask open-ended questions and save intermediate answers even without submission
+7. Ask if they would like to update their info/someone from ACAPS to get in touch with them for further discussion
+8. Different workflow: if the expert is reading a news article/thread on twitter, etc. where the topics discussed are about the conflict they are consulting on, trigger a dialog through which they can take the survey. The backend will have an API that would match the metadata/title to the current risk and output whether an existing 
 - Conflict experts, often active on social media
 - Anticipatory action and early warning practitioners
 - Researchers

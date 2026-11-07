@@ -4,23 +4,27 @@ We are creating the backend of an app which will become (1) a browser extension 
 The experience needs to be frictionless, privacy-preserving and customisable.
 
 ### Backend
-Requirements for backend:
+Requirements for survey API:
 
 1. Form where experts themselves or NGO's analysts can register a group of experts and match them to the risk situation they are tracking
-2. Use API to fetch the latest report on expert group area (assuming experts are linked to a single area for now)
+2. DONE IN backend/acaps_client.py and backend/latest.py (reuse these scripts):
+   - Use API to fetch the latest report on expert group area (assuming experts are linked to a single area for now) https://api.acaps.org/api/v1/risk-radar/risk-radar/
+   - Pre-process data to make it easy to digest for a light-weight LLM (keep only 3 most recent risk-assessments, or 1 most recent if the context window would get depleted when keeping 3) (latest.py contains this)
 
-https://api.acaps.org/api/v1/risk-radar/risk-radar/
+4. Call LLM hosted on external server to ask LLM to formulate questions to be served to experts. 
+   - Prompt suggestion: 
+   "Using the risk assessment provided, prepare top five pressing questions for the updates to this risk, that require updates from an expert on a 1-5 likert scale (how likely, how pressing, how urgent... etc.). 
+   
+   Also top 5 binary questions (yes/no). The experts are humanitarian experts or people working in conflict management/social scientists, etc. and usually they live near the affected areas. 
+   
+   Make sure the questions are tailored to people weighing in using their knowledge and things they may have found out on the ground (rumours, word-of-mouth, etc.), not questions that require government insiders."
+   - LLM will be hosted on server, so hit the service, provide the prompt and extract questions
 
-3. Pre-process data to make it easy to digest for a light-weight LLM (keep only the risk assessm)
+5. Get questions from previous workflows and prepare them to send to frontend to create the survey
 
-4. Call LLM to create top 5 questions on 1-5 likert scale
-   - Is there a human in the loop here?
-5. Serve user survey with above question (save intermediate answers)
-6. Optional: allow user to select if they would like to answer open-ended questions
-7. If above yes: ask open-ended questions and save intermediate answers even without submission
-7. Ask if they would like to update their info/someone from ACAPS to get in touch with them for further discussion
-8. Different workflow: if the expert is reading a news article/thread on twitter, etc. where the topics discussed are about the conflict they are consulting on, trigger a dialog through which they can take the survey. The backend will have an API that would match the metadata/title to the current risk and output whether an existing 
- 
+- WRITE OPEN API SPEC FOR THIS
+
+
 #### APIs
 
 1. API for user registration, mapping agent to group
