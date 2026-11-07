@@ -37,7 +37,8 @@ A user must be able to pass along unstructured data to ACAPS (text based). It wi
 #### 3. Go through a directed ACAPS created survey (with 10 questions)
 
 The example format will be akin to the text below, with five forecasting questions, and five binary questions about the verification of data.
-The questions will be asked one at a time.
+The questions will be asked one at a time. Each question will include an open ended text box (for optional). 
+Include a "dont know/unsure" button so people can provide.
 
 ##### Predictive, qualitatitve questions
 *(Designed for Humanitarian/Conflict Experts to assess Likelihood and Urgency based on ground truth)*
@@ -65,7 +66,7 @@ Additionally, the expert could highlight text about the article, attach a commen
 
 ### Requirements
 - It should match the styling of https://acaps.org site
-- Little visual clutter, it must not overwhelm the expert, the easier the experience for them, the more likely they will be willing to provide information.
+- Little visual clutter, it must not overwhelm the expert, the easier the experience for them, the more likely they will be willing to provide information. Reduce the least amount of clicks, people are busy in this space.
 - The first target platform is Firefox (since it has VPN - more secure for these humanitarian experts).
 
 ### UI requirements
