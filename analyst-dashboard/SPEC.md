@@ -108,7 +108,7 @@ Submission   (unstructured)
 Notification
   id, risk_code, body, sent_at, recipient_count
 
-# VIEWS FOR THE DASHBOARD 
+# VIEWS FOR THE DASHBOARD
 
 ## Homepage
 - Most important aspect of homepage is the review of the latest survey for the users. Prominent button to lead to the survey review. 
@@ -117,6 +117,37 @@ Notification
     - Reviewing new "unstructured" tips (do not call it feedback but tips/information)
     - Whether there is a new report and survey to be sent out
 - The experts panel does not need to appear in the homepage
+- Feedback on current mock-up: avoid duplicate information (if something is colour-coded there's no need for them to also have excessive titling)
+- The executive summary with buttons at the top should be linking to the full page on the dashboard of that workflow
+- Daily Job (renamed to new survey) and Latest Signals (renamed to latest voluntary info) which are now bottom should be moved to top
+
+## Expert Panel 
+- Simplified
+- Type A = Long-term expert (renamed) // Type B = Informal Expert (renamed)
+- Awaiting Response filterred should be by default brought to the top
+- Separate internal alias from cross-community identifier
+- All Risk codes for each expert should be viewable by clicking on their profiles; analysts should also be able to view their areas of expertise by clicking on their profile. Sample areas of expertise you can populate with: "Economy", "Displacement", "Humanitarian Aid", "Women's Rights", "Conflict"
+
+## Remove Pending Approvals tab 
+- For now we don't need to have this
+
+## Survey Review
+- There should be an obvious edit button for the survey questions
+- Add based on report version: [date] which can be fetched from the questions.py script
+
+## Feedback Inbox 
+- Should be renamed to Tips inbox
+- Unreviewed feedback pinned to the top by default and colour-coded (perhaps wrapped in blue, unread not wrapped)
+
+## Notifications
+- Should be renamed to "Send mass notification" 
+- Add button which allows analyst to send notifications
+
+# Feedback on first draft/general design principles
+1. Don't use Title + Subtitle and small info banner on top, it feels bloated. Stick to one title in most places and only add subtitled if needed
+2. Make risk profile switching buttons at the top way more prominent
+3. All text on dashboard should be larger (viewable from further away) for the demo
+4. 
 
 # Dashboard API (to be formalised as OpenAPI)
 POST /auth/select-risk-code — mock session scoping

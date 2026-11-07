@@ -2,4 +2,4 @@
 __pycache__/
 */prova.py
 .env
-.csv
+*.csv
