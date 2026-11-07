@@ -1,8 +1,7 @@
-# daily_job.py: prepare surveys for every risk that a group tracks
+# daily_job.py: prepare a survey for the hardcoded demo risk
 #
-#   python daily_job.py                 # all risks followed by a registered group
-#   python daily_job.py --risk R1043    # specific risk(s), no group needed (handy for demos)
-#   python daily_job.py --force         # regenerate even if a survey for the latest update exists
+#   python daily_job.py                 # generate a survey for R1011
+#   python daily_job.py --force         # regenerate the R1011 survey, including if closed
 import argparse
 import logging
 import sys
@@ -13,30 +12,35 @@ from questions import generate_survey, survey_id_for
 
 log = logging.getLogger("daily_job")
 
+# The risk to generate a survey for while this script is being used as a demo.
+RISK_ID = "R1011"
+
 # Risks that already resolved: nothing left for experts to forecast or update
 CLOSED_STATUSES = {"materialised", "not materialised"}
 
 
-def run(risk_ids: list[str] | None = None, force: bool = False) -> dict:
+def run(force: bool = False) -> dict:
     stats = {"generated": 0, "skipped": 0, "closed": 0, "missing": 0, "failed": 0}
+    log.info("using SQLite database: %s", db.DB_PATH)
 
     with db.connect() as conn:
-        wanted = sorted(set(risk_ids)) if risk_ids else db.tracked_risk_ids(conn)
-        if not wanted:
-            log.warning("No risks to process: register a group first or pass --risk")
-            return stats
-
-        # one fetch for everything; use_cache=False so the job always sees fresh ACAPS data
-        risks = {r["risk_id"]: r for r in load_risks(use_cache=False)}
+        wanted = [RISK_ID]
+        risks = {
+            r["risk_id"]: r
+            for r in load_risks(use_cache=False, risk_ids=wanted)
+        }
 
         for risk_id in wanted:
             risk = risks.get(risk_id)
             if risk is None:
-                log.warning("%s: not found in API or CSV (or still under development), skipping", risk_id)
+                log.warning("%s: not found in the ACAPS API, skipping", risk_id)
                 stats["missing"] += 1
                 continue
 
-            if str(risk.get("status") or "").strip().lower() in CLOSED_STATUSES:
+            if (
+                not force
+                and str(risk.get("status") or "").strip().lower() in CLOSED_STATUSES
+            ):
                 log.info("%s: risk is %s, no new survey", risk_id, risk["status"])
                 stats["closed"] += 1
                 continue
@@ -70,11 +74,14 @@ def run(risk_ids: list[str] | None = None, force: bool = False) -> dict:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate expert surveys from the latest ACAPS risk updates")
-    parser.add_argument("--risk", action="append", help="risk ID to process (repeatable); default: all tracked")
-    parser.add_argument("--force", action="store_true", help="regenerate surveys that already exist")
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="regenerate existing surveys, even for closed risks",
+    )
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-    result = run(args.risk, args.force)
+    result = run(args.force)
     log.info("done: %s", result)
     sys.exit(1 if result["failed"] else 0)
