@@ -6,6 +6,7 @@ The experience needs to be frictionless, privacy-preserving and customisable.
 
 The users of this dashboard are workers of the NGO who will review experts, help enrol them and manage feedback/new information that experts submit. The dashboard is internal-only. Anonymity is a property of what experts reveal to the public or to each other — analysts see everything an expert provides. The dashboard must therefore tag records by contributor type at write time so downstream systems can differentiate, but there is no analyst-side redaction in V1.
 
+
 ### Users
 NGO analyst — the only dashboard role in V1. Selects a Risk Code at login (no per-analyst restriction to a single code). No super-admin view, no audit logging.
 
