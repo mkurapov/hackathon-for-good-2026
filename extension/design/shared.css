@@ -1,0 +1,176 @@
+/* Shared styles for the ACAPS extension prototypes. Colours and fonts come from acaps.org. */
+:root {
+  --navy: #004b78;
+  --navy-dark: #003c60;
+  --cyan: #0096ba;
+  --red: #d43d3d;
+  --green: #5c9b53;
+  --text: #212121;
+  --muted: #6c6c6c;
+  --line: #dedede;
+  --bg: #f2f2f2;
+  --bg-soft: #f8f8f8;
+  --white: #fff;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  margin: 0; background: #e4e6e8; color: var(--text);
+  font-family: "Roboto Condensed", sans-serif; font-size: 15px;
+}
+
+/* ---------- Demo page chrome (not part of the extension) ---------- */
+.demo-bar { background: var(--navy-dark); color: #fff; display: flex; align-items: center; gap: 18px; padding: 10px 20px; flex-wrap: wrap; }
+.demo-bar h1 { font-family: "Bebas Neue", sans-serif; font-weight: 400; font-size: 26px; letter-spacing: .5px; margin: 0; }
+.demo-bar nav a { color: #9fdcec; text-decoration: none; margin-right: 12px; }
+.demo-bar nav a.on { color: #fff; font-weight: 700; border-bottom: 2px solid var(--cyan); }
+.demo-bar .controls { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+.demo-bar .controls a { color: #fff; border: 1px solid rgba(255,255,255,.35); border-radius: 3px; padding: 3px 9px; font-size: 13px; text-decoration: none; }
+.demo-bar .controls a:hover { background: rgba(255,255,255,.1); }
+.demo-hint { color: var(--muted); margin: 0; padding: 10px 20px 0; font-size: 14px; }
+.stage { padding: 14px 20px 40px; }
+
+/* ---------- Fake Firefox window ---------- */
+.browser { position: relative; max-width: 1200px; background: #fff; border-radius: 8px; box-shadow: 0 8px 30px rgba(0,0,0,.2); overflow: hidden; }
+.b-bar { background: #f0f0f4; padding: 8px 12px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #d0d0d7; height: 44px; }
+.dots i { display: inline-block; width: 11px; height: 11px; border-radius: 50%; background: #ccc; margin-right: 5px; }
+.url { flex: 1; min-width: 0; background: #fff; border-radius: 4px; padding: 5px 10px; font-size: 13px; color: #444; font-family: system-ui, sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vpn { font-size: 11px; background: #592acb; color: #fff; padding: 2px 6px; border-radius: 3px; font-family: system-ui, sans-serif; }
+.ext-icon { position: relative; width: 28px; height: 28px; border-radius: 4px; background: var(--navy); color: #fff; font-family: "Bebas Neue", sans-serif; font-size: 16px; display: grid; place-items: center; cursor: pointer; border: 0; }
+.ext-icon.open { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.ext-icon .badge { position: absolute; top: -4px; right: -5px; background: var(--cyan); color: #fff; font-family: system-ui, sans-serif; font-size: 10px; border-radius: 8px; padding: 0 4px; line-height: 14px; }
+.b-content { display: flex; height: 700px; }
+.page-area { flex: 1; min-width: 0; overflow-y: auto; position: relative; }
+.blank-page { height: 100%; display: grid; place-items: center; text-align: center; color: #999; font-family: system-ui, sans-serif; font-size: 14px; background: #fafafa; }
+
+/* Toolbar popup hangs from the extension icon */
+.popup-layer { position: absolute; top: 48px; right: 8px; z-index: 30; }
+.popup-layer::before { content: ""; position: absolute; top: -6px; right: 14px; border: 6px solid transparent; border-top: 0; border-bottom-color: var(--navy); }
+
+/* Firefox sidebar */
+.ff-sidebar { width: 370px; display: flex; flex-direction: column; border-left: 1px solid var(--line); }
+.ff-sidebar-title { font-family: system-ui, sans-serif; font-size: 12px; padding: 4px 10px; background: #f9f9fb; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; color: #333; }
+.ff-sidebar-title button { background: none; border: 0; font-size: 16px; cursor: pointer; color: #555; }
+
+/* ---------- Extension UI ---------- */
+.popup { width: 360px; background: var(--white); border-radius: 6px; box-shadow: 0 8px 28px rgba(0,0,0,.25); overflow: hidden; }
+.sidebar { flex: 1; min-height: 0; background: var(--white); display: flex; flex-direction: column; overflow: hidden; outline: none; }
+.sidebar .ext-body { flex: 1; overflow-y: auto; }
+.ext-head { background: var(--navy); color: #fff; display: flex; align-items: center; gap: 10px; padding: 10px 14px; }
+.logo { font-family: "Bebas Neue", sans-serif; font-size: 24px; letter-spacing: 1px; line-height: 1; }
+.logo span { color: var(--cyan); }
+.ext-head .sub { font-size: 12px; opacity: .8; font-weight: 300; }
+.ext-head .spacer { flex: 1; }
+.icon-btn { background: transparent; border: 1px solid rgba(255,255,255,.35); color: #fff; border-radius: 3px; font: inherit; font-size: 12px; padding: 3px 8px; cursor: pointer; }
+.icon-btn:hover { background: rgba(255,255,255,.1); }
+.ext-body { padding: 14px; }
+.ext-foot { border-top: 1px solid var(--line); padding: 10px 14px; display: flex; gap: 8px; align-items: center; background: var(--bg-soft); }
+.ext-foot.block { display: block; }
+
+h3 { font-family: "Bebas Neue", sans-serif; font-weight: 400; font-size: 20px; color: var(--navy); margin: 0 0 8px; letter-spacing: .3px; }
+.label { font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); font-weight: 700; margin: 0 0 6px; }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+.stack > * + * { margin-top: 10px; }
+
+.btn { font: inherit; font-weight: 700; border-radius: 3px; padding: 8px 14px; cursor: pointer; border: 1px solid var(--navy); background: var(--navy); color: #fff; }
+.btn:hover { background: var(--navy-dark); }
+.btn.secondary { background: #fff; color: var(--navy); }
+.btn.secondary:hover { background: #e6edf2; }
+.btn.cyan { background: var(--cyan); border-color: var(--cyan); }
+.btn.cyan:hover { background: #0083a3; }
+.btn.block { width: 100%; }
+.btn.sm { padding: 5px 10px; font-size: 13px; }
+.btn:disabled { opacity: .4; cursor: default; }
+.link { color: var(--cyan); text-decoration: none; font-weight: 700; cursor: pointer; background: none; border: 0; font: inherit; padding: 0; }
+
+input[type=text], textarea, select {
+  width: 100%; font: inherit; border: 1px solid var(--line); border-radius: 3px; padding: 8px 10px; background: #fff; color: var(--text);
+}
+textarea { resize: vertical; min-height: 90px; }
+input:focus, textarea:focus, select:focus { outline: 2px solid rgba(0,150,186,.35); border-color: var(--cyan); }
+.code-input { font-family: monospace; font-size: 20px; letter-spacing: 4px; text-align: center; text-transform: uppercase; }
+
+.card { border: 1px solid var(--line); border-radius: 4px; padding: 12px; margin-bottom: 12px; background: #fff; }
+.card.info { border-left: 4px solid var(--cyan); }
+.card.invite { background: #eef7fa; border-color: #cfe7ef; border-left: 4px solid var(--cyan); }
+.mini-progress { height: 4px; background: #d6ecf2; border-radius: 2px; overflow: hidden; }
+.mini-progress > div { height: 100%; background: var(--cyan); }
+.chip { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 10px; background: #e6edf2; color: var(--navy); font-weight: 700; margin: 0 4px 4px 0; }
+
+.success { text-align: center; padding: 28px 14px; }
+.success .tick { width: 54px; height: 54px; border-radius: 50%; background: var(--green); color: #fff; font-size: 30px; display: grid; place-items: center; margin: 0 auto 12px; }
+
+/* Survey */
+.progress { height: 4px; background: var(--bg); }
+.progress > div { height: 100%; background: var(--cyan); transition: width .2s; }
+.q-num { font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--cyan); font-weight: 700; margin-bottom: 6px; display: flex; justify-content: space-between; }
+.q-num .link { font-weight: 400; text-transform: none; letter-spacing: 0; font-size: 13px; }
+.q-big { font-family: "Bebas Neue", sans-serif; font-size: 26px; color: var(--navy); line-height: 1.1; margin: 0 0 10px; font-weight: 400; }
+.q-body { font-size: 16px; line-height: 1.45; color: #313131; margin: 0 0 22px; }
+.context-box { background: var(--bg-soft); border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px; font-size: 13px; margin-bottom: 10px; }
+.answers { display: flex; gap: 4px; }
+.answers button { flex: 1; font: inherit; font-weight: 700; font-size: 18px; padding: 14px 0; border: 1px solid var(--line); background: #fff; border-radius: 3px; cursor: pointer; color: var(--text); }
+.answers button:hover { border-color: var(--cyan); }
+.answers button.on { background: var(--navy); color: #fff; border-color: var(--navy); }
+.answers button.skip { flex: 1.4; font-size: 12px; font-weight: 400; line-height: 1.2; color: var(--muted); }
+.answers button.skip.on { background: var(--muted); border-color: var(--muted); color: #fff; }
+.legend { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin: 4px 0 0; padding-right: 28%; }
+
+/* ---------- Article page + injected UI (content script) ---------- */
+.article { max-width: 640px; margin: 0 auto; padding: 36px 24px 140px; line-height: 1.65; color: #222; font-family: Georgia, serif; }
+.article .kicker { font-family: system-ui, sans-serif; font-size: 12px; text-transform: uppercase; color: #b00; font-weight: 700; letter-spacing: .5px; }
+.article h1 { font-size: 32px; line-height: 1.2; margin: 8px 0 12px; }
+.article .byline { font-family: system-ui, sans-serif; font-size: 13px; color: #777; margin-bottom: 20px; }
+.article ::selection { background: #b8e3ee; }
+mark.acaps-hl { background: #b8e3ee; padding: 1px 0; border-bottom: 2px solid var(--cyan); }
+mark.acaps-hl.agree { background: #deebdd; border-bottom-color: var(--green); }
+mark.acaps-hl.disagree { background: #f6d8d8; border-bottom-color: var(--red); }
+
+/* Agree / Disagree */
+.btn.agree { background: var(--green); border-color: var(--green); }
+.btn.agree:hover { background: #4b8543; }
+.btn.disagree { background: var(--red); border-color: var(--red); }
+.btn.disagree:hover { background: #b93232; }
+.stance { display: flex; gap: 6px; }
+.stance button { flex: 1; font: inherit; font-weight: 700; padding: 9px 0; border-radius: 3px; cursor: pointer; background: #fff; }
+.stance .agree { border: 1px solid var(--green); color: var(--green); }
+.stance .disagree { border: 1px solid var(--red); color: var(--red); }
+.stance .agree.on { background: var(--green); color: #fff; }
+.stance .disagree.on { background: var(--red); color: #fff; }
+.stance-tag { display: inline-block; font-size: 11px; font-weight: 700; border-radius: 9px; padding: 1px 7px; margin-bottom: 4px; color: #fff; }
+.stance-tag.agree { background: var(--green); }
+.stance-tag.disagree { background: var(--red); }
+
+.toast { position: absolute; right: 18px; bottom: 18px; width: 320px; background: #fff; border-radius: 6px; box-shadow: 0 8px 28px rgba(0,0,0,.25); overflow: hidden; border-top: 4px solid var(--navy); z-index: 5; animation: slide-in .25s ease-out; }
+.toast .t-head { display: flex; align-items: center; gap: 8px; padding: 10px 12px 0; }
+.toast .t-body { padding: 6px 12px 12px; font-size: 14px; }
+.toast .t-actions { display: flex; gap: 6px; margin-top: 10px; }
+.toast .t-actions > * { flex: 1; }
+.toast .t-more { display: flex; gap: 14px; margin-top: 10px; font-size: 14px; }
+.toast .close { margin-left: auto; background: none; border: 0; font-size: 18px; color: var(--muted); cursor: pointer; line-height: 1; }
+@keyframes slide-in { from { transform: translateY(16px); opacity: 0; } }
+.sel-bar { position: absolute; z-index: 6; display: flex; flex-direction: column; gap: 3px; background: var(--navy); opacity: 1; border: 1px solid var(--navy); border-radius: 4px; padding: 4px; box-shadow: 0 3px 12px rgba(0,0,0,.18); white-space: nowrap; }
+.sel-bar::before, .sel-bar::after { content: ""; position: absolute; left: 50%; transform: translateX(-50%); border: 6px solid transparent; border-bottom: 0; }
+.sel-bar::before { bottom: -7px; border-top-color: var(--navy); }
+.sel-bar::after { bottom: -6px; border-top-color: var(--navy); }
+.sel-logo { font-family: "Bebas Neue", sans-serif; font-size: 16px; letter-spacing: 1px; line-height: 1; color: #fff; padding: 2px 2px 0; }
+.sel-logo span { color: var(--cyan); }
+.sel-actions { display: flex; gap: 4px; }
+.sel-bar button { font-family: "Roboto Condensed", sans-serif; font-weight: 700; font-size: 13px; border-radius: 3px; padding: 5px 10px; cursor: pointer; }
+.sel-bar .agree { background: var(--green); border: 1px solid var(--green); color: #fff; }
+.sel-bar .disagree { background: var(--red); border: 1px solid var(--red); color: #fff; }
+.sel-bar .agree:hover { background: #4b8543; }
+.sel-bar .disagree:hover { background: #b93232; }
+.sel-bar .comment { background: transparent; border: 2px solid #fff; color: #fff; padding: 4px 10px; }
+.sel-bar .comment:hover { background: rgba(255,255,255,.15); }
+.comment-pop { position: absolute; z-index: 7; width: 320px; background: #fff; border-radius: 6px; box-shadow: 0 8px 28px rgba(0,0,0,.25); padding: 12px; border-top: 4px solid var(--cyan); }
+.quote { margin: 0 0 8px; padding: 6px 10px; border-left: 3px solid var(--cyan); background: var(--bg-soft); font-size: 13px; font-style: italic; max-height: 80px; overflow: hidden; }
+
+@media (max-width: 760px) {
+  .stage { padding: 12px 8px 32px; }
+  .b-content { flex-direction: column; height: auto; min-height: 600px; }
+  .ff-sidebar { width: 100%; height: 640px; border-left: 0; border-top: 1px solid var(--line); }
+  .popup { width: min(360px, calc(100vw - 32px)); }
+  .vpn { display: none; }
+}

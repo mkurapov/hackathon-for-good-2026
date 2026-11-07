@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ACAPS Popup Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Roboto+Condensed:wght@300;400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css?v=7">
+</head>
+<body>
+
+<header class="demo-bar">
+  <h1>ACAPS extension · prototype</h1>
+  <nav><a href="popup.html" class="on">Popup</a><a href="article.html">Article</a></nav>
+  <div class="controls">
+    <a href="popup.html?start=confirm">Restart: from invite link</a>
+    <a href="popup.html?start=code">Restart: without link</a>
+    <a href="popup.html?start=home">Skip to home</a>
+  </div>
+</header>
+<p class="demo-hint">The toolbar popup on its own. Click the ACAPS icon to open or close it. "Continue" and ⇥ open the Firefox sidebar.</p>
+
+<div class="stage">
+  <div class="browser">
+    <div class="b-bar">
+      <div class="dots"><i></i><i></i><i></i></div>
+      <div class="url">about:newtab</div>
+      <span class="vpn">VPN on</span>
+      <button class="ext-icon" id="extIcon" title="ACAPS">A<span class="badge" id="badge">1</span></button>
+    </div>
+    <div class="b-content">
+      <div class="page-area"><div class="blank-page">Any web page.<br>Click the ACAPS icon in the toolbar ↗</div></div>
+      <aside class="ff-sidebar" id="sidebar" hidden>
+        <div class="ff-sidebar-title"><span>ACAPS</span><button id="sidebarClose" title="Close sidebar">×</button></div>
+        <div class="sidebar" id="sidebarPanel"></div>
+      </aside>
+    </div>
+    <div class="popup-layer" id="popupLayer" hidden><div class="popup" id="popup"></div></div>
+  </div>
+</div>
+
+<script src="prototype.js?v=7"></script>
+<script>
+  Proto.init({
+    start: 'confirm',
+    popupOpen: true,
+    els: {
+      icon: document.getElementById('extIcon'),
+      badge: document.getElementById('badge'),
+      popupLayer: document.getElementById('popupLayer'),
+      popup: document.getElementById('popup'),
+      sidebar: document.getElementById('sidebar'),
+      sidebarPanel: document.getElementById('sidebarPanel'),
+      sidebarClose: document.getElementById('sidebarClose'),
+    },
+  });
+</script>
+</body>
+</html>
