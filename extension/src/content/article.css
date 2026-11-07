@@ -1,0 +1,4 @@
+/* Marks added to the article when the expert highlights a passage. */
+mark.acaps-hl { background: #b8e3ee !important; color: inherit !important; padding: 1px 0; border-bottom: 2px solid #0096ba; }
+mark.acaps-hl.agree { background: #deebdd !important; border-bottom-color: #5c9b53; }
+mark.acaps-hl.disagree { background: #f6d8d8 !important; border-bottom-color: #d43d3d; }
