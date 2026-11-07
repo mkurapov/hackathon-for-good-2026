@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ACAPS Article Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Roboto+Condensed:wght@300;400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css?v=7">
+</head>
+<body>
+
+<header class="demo-bar">
+  <h1>ACAPS extension · prototype</h1>
+  <nav><a href="popup.html">Popup</a><a href="article.html" class="on">Article</a></nav>
+  <div class="controls"><a href="article.html">Restart</a></div>
+</header>
+<p class="demo-hint">An expert opens a news article that matches a crisis they follow. Try the toast, select text in the article to agree, disagree or comment, or click the ACAPS icon.</p>
+
+<div class="stage">
+  <div class="browser">
+    <div class="b-bar">
+      <div class="dots"><i></i><i></i><i></i></div>
+      <div class="url">example-news.com/americas/venezuela-military-reshuffle-2026</div>
+      <span class="vpn">VPN on</span>
+      <button class="ext-icon" id="extIcon" title="ACAPS">A<span class="badge" id="badge">1</span></button>
+    </div>
+    <div class="b-content">
+      <div class="page-area" id="pageArea">
+        <article class="article" id="article">
+          <div class="kicker">Americas</div>
+          <h1>Venezuela's new cabinet reshuffles army command as US warships remain offshore</h1>
+          <div class="byline">By Staff Reporter · 6 November 2026 · 5 min read</div>
+          <p>CARACAS — Venezuela's interim government replaced at least four regional army commanders this week, officials said, in the most significant military shake-up since the removal of former defence minister Vladimir Padrino López.</p>
+          <p>The government described the changes as routine rotations. But two retired officers, speaking on condition of anonymity, said the moves targeted commanders seen as close to the previous leadership, and that several mid-ranking officers in Zulia and Táchira states had not been paid for over a month.</p>
+          <p>Aid agencies operating in rural Apure said road checkpoints had multiplied since October, slowing deliveries of food and medical supplies. "We are negotiating access village by village," said one coordinator.</p>
+          <p>Meanwhile, US naval vessels remained in waters off the northern coast. Washington says the deployment is aimed at drug trafficking routes, while Caracas has called it a pressure tactic tied to oil negotiations.</p>
+          <p>Analysts say the coming weeks will test whether the new cabinet can keep the armed forces united while delivering on promises of economic recovery.</p>
+        </article>
+
+        <!-- Injected by the extension's content script -->
+        <div class="toast" id="toast" hidden>
+          <div class="t-head">
+            <div class="logo" style="color:var(--navy); font-size:20px">ACAPS<span>.</span></div>
+            <span class="chip" style="margin:0">Venezuela</span>
+            <button class="close" id="toastClose" title="Dismiss">×</button>
+          </div>
+          <div class="t-body" id="toastAsk">
+            Does this match what you're seeing?
+            <div class="t-actions">
+              <button class="btn agree sm" data-quick="agree">Agree</button>
+              <button class="btn disagree sm" data-quick="disagree">Disagree</button>
+            </div>
+            <div class="t-more">
+              <button class="link" id="toastFeedback">Share your view →</button>
+              <button class="link" id="toastSurvey">Take the survey →</button>
+            </div>
+          </div>
+          <div class="t-body" id="toastThanks" hidden>
+            <b style="color:var(--green)">Thanks, sent to ACAPS.</b>
+            <div class="t-more"><button class="link" id="toastMore">Add details →</button></div>
+          </div>
+        </div>
+        <div class="sel-bar" id="selBtn" hidden>
+          <div class="sel-logo">ACAPS<span>.</span></div>
+          <div class="sel-actions">
+            <button class="agree" data-sel-stance="agree" title="Agree with this passage">Agree</button>
+            <button class="disagree" data-sel-stance="disagree" title="Disagree with this passage">Disagree</button>
+            <button class="comment" id="selComment">Comment</button>
+          </div>
+        </div>
+        <div class="comment-pop" id="commentPop" hidden>
+          <div class="label">Comment on selection</div>
+          <div class="quote" id="quote"></div>
+          <textarea id="commentText" placeholder="Is this accurate? What's missing? (optional)" style="min-height:70px"></textarea>
+          <div style="display:flex; gap:6px; margin-top:8px">
+            <button class="btn sm" id="addHighlight">Add to feedback</button>
+            <button class="btn secondary sm" id="cancelPop">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <aside class="ff-sidebar" id="sidebar" hidden>
+        <div class="ff-sidebar-title"><span>ACAPS</span><button id="sidebarClose" title="Close sidebar">×</button></div>
+        <div class="sidebar" id="sidebarPanel"></div>
+      </aside>
+    </div>
+    <div class="popup-layer" id="popupLayer" hidden><div class="popup" id="popup"></div></div>
+  </div>
+</div>
+
+<script src="prototype.js?v=7"></script>
+<script>
+  const $ = id => document.getElementById(id);
+
+  Proto.init({
+    start: 'home',
+    article: {
+      title: "Venezuela's new cabinet reshuffles army command as US warships remain offshore",
+      source: 'example-news.com',
+      date: '6 Nov 2026',
+    },
+    els: {
+      icon: $('extIcon'), badge: $('badge'),
+      popupLayer: $('popupLayer'), popup: $('popup'),
+      sidebar: $('sidebar'), sidebarPanel: $('sidebarPanel'), sidebarClose: $('sidebarClose'),
+    },
+  });
+
+  // ---------- Toast: shown shortly after a matched article loads ----------
+  const toast = $('toast');
+  let toastDismissed = false;
+  const hideToast = () => { toastDismissed = true; toast.hidden = true; };
+  setTimeout(() => { if (!toastDismissed) toast.hidden = false; }, 800);
+  $('toastClose').onclick = hideToast;
+  $('toastFeedback').onclick = () => { hideToast(); Proto.openSidebar('feedback'); };
+  $('toastSurvey').onclick = () => { hideToast(); Proto.openSidebar('survey'); };
+  // Quick Agree / Disagree: one click, sent straight away, then the toast says thanks and fades.
+  toast.querySelectorAll('[data-quick]').forEach(b => b.onclick = () => {
+    Proto.quickStance(b.dataset.quick);
+    $('toastAsk').hidden = true; $('toastThanks').hidden = false;
+    setTimeout(() => { if (!$('toastThanks').hidden) hideToast(); }, 5000);
+  });
+  $('toastMore').onclick = () => { hideToast(); Proto.openSidebar('feedback'); };
+  const syncToast = () => { $('toastSurvey').hidden = !Proto.surveyOutstanding(); };
+  syncToast();
+
+  Proto.on((type, data) => {
+    if (type === 'change') syncToast();
+    // Removing a highlight in the sidebar also removes its mark from the page.
+    if (type === 'highlight-removed' && data.mark) data.mark.replaceWith(...data.mark.childNodes);
+  });
+
+  // ---------- Highlight to comment ----------
+  const area = $('pageArea'), articleEl = $('article'), selBtn = $('selBtn'), pop = $('commentPop');
+  let range = null;
+
+  const posIn = rect => {
+    const a = area.getBoundingClientRect();
+    return { left: rect.left - a.left + area.scrollLeft, top: rect.top - a.top + area.scrollTop, bottom: rect.bottom - a.top + area.scrollTop };
+  };
+
+  document.addEventListener('mouseup', e => {
+    if (pop.contains(e.target) || selBtn.contains(e.target)) return;
+    setTimeout(() => {
+      const sel = window.getSelection();
+      if (!sel.rangeCount || sel.isCollapsed || !articleEl.contains(sel.anchorNode) || !sel.toString().trim()) {
+        selBtn.hidden = true; return;
+      }
+      range = sel.getRangeAt(0).cloneRange();
+      const r = range.getBoundingClientRect(), p = posIn(r);
+      selBtn.hidden = false;
+      selBtn.style.left = Math.max(8, p.left + r.width / 2 - selBtn.offsetWidth / 2) + 'px';
+      selBtn.style.top = (p.top - selBtn.offsetHeight - 9) + 'px';
+    }, 0);
+  });
+
+  $('selComment').onclick = () => {
+    const r = range.getBoundingClientRect(), p = posIn(r);
+    $('quote').textContent = range.toString();
+    $('commentText').value = '';
+    pop.hidden = false;
+    pop.style.left = Math.max(8, Math.min(p.left, area.clientWidth - 336)) + 'px';
+    pop.style.top = (p.bottom + 8) + 'px';
+    selBtn.hidden = true;
+    $('commentText').focus();
+  };
+  $('cancelPop').onclick = () => { pop.hidden = true; };
+  $('commentText').onkeydown = e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) $('addHighlight').click(); };
+
+  function addHighlight(stance, comment) {
+    const text = range.toString().trim();
+    let mark = null;
+    try { mark = document.createElement('mark'); mark.className = 'acaps-hl ' + (stance || ''); range.surroundContents(mark); }
+    catch (_) { mark = null; } // selection crosses paragraphs: keep the quote, skip the mark
+    window.getSelection().removeAllRanges();
+    pop.hidden = true; selBtn.hidden = true;
+    hideToast();
+    Proto.addHighlight({ text, comment, stance, mark });
+  }
+  $('addHighlight').onclick = () => addHighlight(null, $('commentText').value.trim());
+  // Agree / Disagree on a passage: one click, added to the article feedback.
+  selBtn.querySelectorAll('[data-sel-stance]').forEach(b => b.onclick = () => addHighlight(b.dataset.selStance, ''));
+</script>
+</body>
+</html>
