@@ -33,8 +33,7 @@ def latest_context(risk: dict, max_updates: int = 3) -> dict:
         "updates": updates,        # newest first, 0-3 entries
     }
 
-def format_context(risk: dict) -> str:
-    ctx = latest_context(risk)
+def render_context(ctx: dict) -> str:
     updates = ctx["updates"]  # newest first
     country = ", ".join(ctx["country"]) if isinstance(ctx["country"], list) else ctx["country"]
 
@@ -45,13 +44,16 @@ def format_context(risk: dict) -> str:
     parts = [header]
     if ctx["background"]:
         parts.append(ctx["background"])
-    for update in reversed(updates):  # oldest -> newest, so the story reads chronologically
+    for update in reversed(updates):  # oldest -> newest
         parts.append(f"Update {update['date']}: {update['text']}" if update["date"] else update["text"])
     formatted = "\n\n".join(parts)
-    cache_file = CACHE_DIR / f"formatted_context_{ctx['risk_id']}_{last_date.replace('/', '-') if last_date else 'no-date'}.txt"
-    with open(cache_file, "w", encoding="utf-8") as f:
+    with open(CACHE_DIR / f"latest_context_{ctx['risk_id']}_{last_date.replace('/', '-') if last_date else None}.text", "w", encoding="utf8") as f:
         f.write(formatted)
     return formatted
+
+
+def format_context(risk: dict, max_updates: int = 3) -> str:
+    return render_context(latest_context(risk, max_updates))
 
 
 if __name__ == "__main__":
