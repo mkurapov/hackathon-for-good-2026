@@ -49,6 +49,24 @@ CREATE TABLE IF NOT EXISTS responses (
     updated_at  TEXT NOT NULL,
     PRIMARY KEY (survey_id, expert_id)
 );
+
+CREATE TABLE IF NOT EXISTS notes (
+    note_id     TEXT PRIMARY KEY,
+    expert_id   TEXT NOT NULL REFERENCES experts(expert_id),
+    risk_id     TEXT NOT NULL,
+    text        TEXT NOT NULL,
+    url         TEXT,
+    created_at  TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS article_comments (
+    comment_id  TEXT PRIMARY KEY,
+    expert_id   TEXT NOT NULL REFERENCES experts(expert_id),
+    url         TEXT NOT NULL,
+    risk_id     TEXT NOT NULL,
+    text        TEXT NOT NULL,
+    created_at  TEXT NOT NULL
+);
 """
 
 
