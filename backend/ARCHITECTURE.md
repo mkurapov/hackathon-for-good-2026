@@ -54,12 +54,12 @@ flowchart TD
 | File | Role | Notes | Owner |
 |---|---|---|---|
 | `acaps_client.py` | Talks to the ACAPS API: token auth (`/api/v1/token-auth/`), pagination, rate limiting (60 requests/min), JSON cache in `.cache/` | Cache key includes the filters; `use_cache=False` forces a fresh fetch | |
-| `data.py` | Single loader for risks: API first, CSV fills the gaps (R1043 only exists in the CSV). Drops drafts (under development) | Both sources produce the same record shape | |
+| `data.py` | Loads risks from the ACAPS API; targeted IDs use the API's `risk_id` filter; optionally includes CSV-only risks when `include_csv=True` | API-only by default; drops drafts (under development) | |
 | `latest.py` | Turns a risk into a compact LLM context: 3 most recent updates, or rationale + updates if there are fewer than 3. Strips citation links | `render_context` produces the text | |
 | `questions.py` | Prompt, LLM call, JSON extraction/validation, retries. Assigns question IDs (`L1`-`L5`, `B1`-`B5`) and `survey_id`. Returns a `Survey` matching the OpenAPI schema | Token budget: 3 updates, falls back to 1 | |
 | `db.py` | SQLite storage: groups, experts, surveys, normalized `survey_questions`, responses, notes, article comments, contact requests | Questions are indexed by `risk_id` and `based_on_update`; expert tokens are stored hashed | |
 | `seed_demo.py` | Creates a demo group (invite code `DEMO-VEN-2026`) and survey, without the LLM, for trying the extension | `--reset` removes demo experts and answers | |
-| `daily_job.py` | Orchestrator. For each risk a group tracks: skip if the survey for the latest update exists, skip closed risks, otherwise generate and save | One failing risk does not stop the others | |
+| `daily_job.py` | Demo orchestrator for hardcoded risk `R1011`; skips existing surveys and closed risks, otherwise generates and saves | One failing risk does not stop the job | |
 | `api.py` | FastAPI app; authentication, request validation, and API routes backed by SQLite | Article matching currently checks exact risk-ID/title text matches | |
 | `openapi.yaml` | API contract | Assumptions are marked in the file | |
 | `SPEC_1.md` | Team requirements | | |
@@ -68,11 +68,11 @@ flowchart TD
 
 ### 1. Daily job (survey preparation)
 
-1. `data.load_risks(use_cache=False)` fetches all risks from the ACAPS API and fills in any the API does not serve from the CSV.
-2. For each risk that at least one group tracks, `questions.survey_id_for(risk)` computes `<risk_id>_<yyyy-mm-dd of newest update>` without calling the LLM.
-3. If that survey already exists, the job skips it. Closed risks (`Materialised`, `Not materialised`) and risks missing from the data are skipped too.
+1. `data.load_risks(use_cache=False, risk_ids=["R1011"])` requests the hardcoded demo risk directly from the ACAPS API. Targeted requests include the requested risk even if it is marked under development.
+2. `questions.survey_id_for(risk)` computes `<risk_id>_<yyyy-mm-dd of newest update>` without calling the LLM.
+3. If that survey already exists, the job skips it. Closed risks (`Materialised`, `Not materialised`) are also skipped unless `--force` is used; risks missing from the data are always skipped.
 4. Otherwise `generate_survey(risk)` builds the context (`latest.py`), calls the LLM, validates the JSON (retries up to twice), and returns a `Survey`.
-5. `db.save_survey` stores it. `--force` regenerates, but refuses when experts have already answered that survey.
+5. `db.save_survey` stores it. `--force` regenerates even closed risks, but refuses when experts have already answered that survey.
 
 ### 2. Expert flow (API)
 
@@ -137,10 +137,9 @@ ORDER BY question_type, question_id;
 ```bash
 pip install requests python-dotenv pydantic fastapi uvicorn
 
-# generate surveys
-python daily_job.py --risk R1043     # one risk, no group needed (demo)
-python daily_job.py                  # every risk a registered group tracks
-python daily_job.py --force          # regenerate existing surveys
+# generate a survey for the hardcoded demo risk (R1011)
+python daily_job.py
+python daily_job.py --force          # regenerate R1011 even if closed (unless it has responses)
 
 # start the API (without Docker)
 uvicorn api:app --app-dir backend --reload --env-file .env
