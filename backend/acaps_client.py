@@ -63,5 +63,8 @@ def fetch_risks(use_cache: bool = True, **filters) -> list[dict]:
 
 
 if __name__ == "__main__":
-    risks = fetch_risks(use_cache=False, risk_id="R1011", ordering="-last_risk_update")
-    print(f"Fetched {len(risks)} risk(s)")
+    risks = fetch_risks(use_cache=True, risk_id="R1011", ordering="-last_risk_update")
+    print(f"Fetched {len(risks)} risks")
+    if risks:
+        print("Successfully fetched fields:", sorted(risks[0].keys()))
+        print(json.dumps(risks[0], indent=2)[:1500])
