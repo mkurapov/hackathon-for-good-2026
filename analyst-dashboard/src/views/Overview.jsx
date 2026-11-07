@@ -2,7 +2,7 @@ import { initialsFor, timeAgo } from "../lib/utils.js";
 
 const byUnreviewedFirst = (a, b) => Number(b.status === "unreviewed") - Number(a.status === "unreviewed");
 
-export default function Overview({ risk, survey, submissions, unreviewedCount, goTo }) {
+export default function Overview({ risk, survey, submissions, unreviewedCount, goTo, openTip }) {
   const questions = survey?.questions || [];
   const surveyStatus = survey?.status;
   const latest = submissions.filter((item) => item.riskCode === risk.code).sort(byUnreviewedFirst).slice(0, 3);
@@ -48,14 +48,20 @@ export default function Overview({ risk, survey, submissions, unreviewedCount, g
           <div className="latest-feedback">
             {latest.length === 0 && <div className="history-empty">No voluntary information linked to this Risk Code.</div>}
             {latest.map((item) => (
-              <div key={item.id} className={`latest-item${item.status === "unreviewed" ? " unreviewed" : ""}`}>
+              <button
+                key={item.id}
+                type="button"
+                className={`latest-item${item.status === "unreviewed" ? " unreviewed" : ""}`}
+                onClick={() => openTip(item.id)}
+                title="Open in Tips inbox"
+              >
                 <span className="latest-initial">{initialsFor(item.handle)}</span>
                 <span>
                   <strong>{item.handle}</strong>
                   <small>{item.body.slice(0, 80)}{item.body.length > 80 ? "…" : ""}</small>
                 </span>
                 <time>{item.status === "unreviewed" ? "NEW" : timeAgo(item.createdAt)}</time>
-              </div>
+              </button>
             ))}
           </div>
         </article>

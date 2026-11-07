@@ -34,6 +34,7 @@ export default function App() {
   const [experts, setExperts] = useState([]);
   const [survey, setSurvey] = useState(null);
   const [tips, setTips] = useState([]);
+  const [focusTipId, setFocusTipId] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [loadError, setLoadError] = useState(null);
   const [modal, setModal] = useState(null);
@@ -116,6 +117,12 @@ export default function App() {
     toast(`Risk profile switched to ${code}`);
   };
 
+  // From the overview: open the inbox scrolled to one tip.
+  const openTip = (id) => {
+    setFocusTipId(id);
+    goTo("feedback");
+  };
+
   const replaceTip = (tip) => setTips((items) => items.map((item) => (item.id === tip.id ? tip : item)));
   const updateTip = async (id, patch) => {
     const tip = await attempt(() => api.updateTip(id, patch));
@@ -193,14 +200,21 @@ export default function App() {
           />
           <div className="view-wrap">
             {view === "overview" && (
-              <Overview {...shared} survey={survey} submissions={tips} unreviewedCount={unreviewedCount} />
+              <Overview {...shared} survey={survey} submissions={tips} unreviewedCount={unreviewedCount} openTip={openTip} />
             )}
             {view === "experts" && <Experts {...shared} />}
             {view === "survey" && (
               <Survey {...shared} survey={survey} onSave={saveSurvey} onPublish={publishSurvey} />
             )}
             {view === "feedback" && (
-              <Tips {...shared} submissions={tips} updateSubmission={updateTip} unreviewedCount={unreviewedCount} />
+              <Tips
+                {...shared}
+                submissions={tips}
+                updateSubmission={updateTip}
+                unreviewedCount={unreviewedCount}
+                focusTipId={focusTipId}
+                onFocusDone={() => setFocusTipId(null)}
+              />
             )}
             {view === "notifications" && (
               <Notifications {...shared} notifications={notifications} onQueue={sendNotification} />

@@ -1,11 +1,27 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { initialsFor, timeAgo, typeLabel } from "../lib/utils.js";
 
 const byUnreviewedFirst = (a, b) => Number(b.status === "unreviewed") - Number(a.status === "unreviewed");
 
-export default function Tips({ risks, submissions, updateSubmission, unreviewedCount, openModal, toast }) {
+export default function Tips({ risks, submissions, updateSubmission, unreviewedCount, openModal, toast, focusTipId, onFocusDone }) {
   const [status, setStatus] = useState("all");
   const [code, setCode] = useState("all");
+  const [highlightId, setHighlightId] = useState(null);
+  const cardRefs = useRef({});
+
+  // Opened from the overview: scroll to that tip and flash it.
+  useEffect(() => {
+    if (!focusTipId) return;
+    cardRefs.current[focusTipId]?.scrollIntoView({ behavior: "smooth", block: "center" });
+    setHighlightId(focusTipId);
+    onFocusDone?.();
+  }, [focusTipId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!highlightId) return undefined;
+    const timer = window.setTimeout(() => setHighlightId(null), 2000);
+    return () => window.clearTimeout(timer);
+  }, [highlightId]);
 
   const items = submissions.slice().sort(byUnreviewedFirst).filter((s) =>
     (status === "all" || s.status === status) &&
@@ -50,7 +66,11 @@ export default function Tips({ risks, submissions, updateSubmission, unreviewedC
       </div>
       <div className="feedback-list">
         {items.map((s) => (
-          <article key={s.id} className={`feedback-card ${s.status === "unreviewed" ? "tip-unreviewed" : "reviewed"}`}>
+          <article
+            key={s.id}
+            ref={(el) => { cardRefs.current[s.id] = el; }}
+            className={`feedback-card ${s.status === "unreviewed" ? "tip-unreviewed" : "reviewed"}${s.id === highlightId ? " tip-focused" : ""}`}
+          >
             <div className="feedback-head">
               <span className="latest-initial">{initialsFor(s.handle)}</span>
               <div className="feedback-who">

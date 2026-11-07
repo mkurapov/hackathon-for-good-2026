@@ -403,6 +403,14 @@ select.risk-picker { width: 112px; }
 .latest-item small { font-size: 12px; line-height: 1.3; }
 .latest-item.unreviewed { margin: 4px -9px; padding: 8px 9px; background: #eaf5f8; border-left: 3px solid #1295b2; }
 .latest-item time { color: #12809a; font-size: 10px; font-weight: 700; }
+button.latest-item { width: 100%; border: 0; border-bottom: 1px solid #edf0f1; background: transparent; font: inherit; text-align: left; cursor: pointer; }
+button.latest-item:last-child { border-bottom: 0; }
+button.latest-item.unreviewed { width: calc(100% + 18px); background: #eaf5f8; border-left: 3px solid #1295b2; }
+button.latest-item:hover { background: #f5fafb; }
+button.latest-item.unreviewed:hover { background: #dcf0f5; }
+button.latest-item:focus-visible { outline: 2px solid #1295b2; outline-offset: 1px; }
+.feedback-card { transition: box-shadow .4s ease; }
+.feedback-card.tip-focused { box-shadow: 0 0 0 3px rgba(18, 149, 178, .45); }
 .quick-heading { margin-top: 27px; margin-bottom: 10px; }
 .quick-links { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--dash-line); background: #fff; border-radius: 3px; }
 .quick-link { min-width: 0; min-height: 88px; display: flex; align-items: center; gap: 11px; padding: 13px 15px; text-align: left; border: 0; border-right: 1px solid var(--dash-line); background: #fff; cursor: pointer; }
