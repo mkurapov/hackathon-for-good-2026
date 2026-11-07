@@ -48,7 +48,7 @@ class AcapsClient:
             url, params = page["next"], None  # 'next' already contains the query string
 
     def risk_radar(self, **filters) -> list[dict]:
-        return list(self._paginate(f"{BASE_URL}/risk-radar/", filters))  # path: confirm in Swagger
+        return list(self._paginate(f"{BASE_URL}/risk-radar/risk-radar", filters))  # path: confirm in Swagger
 
 
 def fetch_risks(use_cache: bool = True, **filters) -> list[dict]:
