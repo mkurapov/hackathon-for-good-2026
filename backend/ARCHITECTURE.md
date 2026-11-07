@@ -57,7 +57,7 @@ flowchart TD
 | `data.py` | Single loader for risks: API first, CSV fills the gaps (R1043 only exists in the CSV). Drops drafts (under development) | Both sources produce the same record shape | |
 | `latest.py` | Turns a risk into a compact LLM context: 3 most recent updates, or rationale + updates if there are fewer than 3. Strips citation links | `render_context` produces the text | |
 | `questions.py` | Prompt, LLM call, JSON extraction/validation, retries. Assigns question IDs (`L1`-`L5`, `B1`-`B5`) and `survey_id`. Returns a `Survey` matching the OpenAPI schema | Token budget: 3 updates, falls back to 1 | |
-| `db.py` | SQLite storage: groups, experts, surveys, responses, notes, article comments | Expert tokens are stored hashed | |
+| `db.py` | SQLite storage: groups, experts, surveys, normalized `survey_questions`, responses, notes, article comments, contact requests | Questions are indexed by `risk_id` and `based_on_update`; expert tokens are stored hashed | |
 | `seed_demo.py` | Creates a demo group (invite code `DEMO-VEN-2026`) and survey, without the LLM, for trying the extension | `--reset` removes demo experts and answers | |
 | `daily_job.py` | Orchestrator. For each risk a group tracks: skip if the survey for the latest update exists, skip closed risks, otherwise generate and save | One failing risk does not stop the others | |
 | `api.py` | FastAPI app; authentication, request validation, and API routes backed by SQLite | Article matching currently checks exact risk-ID/title text matches | |
@@ -102,6 +102,7 @@ flowchart TD
 
 - **Both data sources produce the same record shape.** Nothing downstream knows whether a risk came from the API or the CSV.
 - **Surveys are keyed by `(risk_id, newest update date)`.** This gives generate-once-per-update, the "already answered?" check, and the `409` on stale answers.
+- **Questions are stored as individual `survey_questions` rows.** Filter by `risk_id` and `based_on_update` to retrieve a risk's question set for a specific ACAPS update. Existing survey JSON remains for compatibility.
 - **Question IDs are assigned in code, not by the LLM.** Answers refer to them, so the model never sees or invents them.
 - **The LLM only sees public ACAPS text**, never expert input.
 - **Anonymity is part of the data model.** There are three levels (`known_to_acaps`, `pseudonymous_to_peers`, `fully_anonymous`). Contributions are never attributed publicly at any level.
@@ -119,6 +120,17 @@ flowchart TD
 | `DB_PATH` | `db.py` | Defaults to `groundtruth.db` next to the script |
 
 Never commit `.env` or `.cache/`.
+
+Fetch questions for one risk and update directly from SQLite:
+
+```sql
+SELECT question_id, question_type, text, dimension
+FROM survey_questions
+WHERE risk_id = ? AND based_on_update = ?
+ORDER BY question_type, question_id;
+```
+
+`based_on_update` uses the ACAPS date string (`dd/mm/yyyy`); it is `NULL` for baseline surveys.
 
 ## Running it
 
