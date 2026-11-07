@@ -139,6 +139,14 @@ Notification
 ## Feedback Inbox 
 - Should be renamed to Tips inbox
 - Unreviewed feedback pinned to the top by default and colour-coded (perhaps wrapped in blue, unread not wrapped)
+- Feedback inbox should contain two tabs: 
+  - Tab 1: Unstructured tips: this is the page where peoples' raw information lands (few sentences where they describe a situation on the ground)
+  - Tab 2: Commentary on articles (see extension/article.html), where the article should be linked, the analyst can click on the link to load a version of the article with the expert's comments overlayed at the points in the page where they commented
+    - But also a "summary" view (similar style as google docs for example), where the highlighted snippet is previewed and the expert's comment is shown underneath
+
+## ADD: Survey Answers view
+- After survey has gone out, the Survey Answers view should be populated with analytics about the surveys answered
+  - Under each question show: average score, standard deviation of scores, highlights of comments added by the experts under the question
 
 ## Notifications
 - Should be renamed to "Send mass notification" 
@@ -148,7 +156,6 @@ Notification
 1. Don't use Title + Subtitle and small info banner on top, it feels bloated. Stick to one title in most places and only add subtitled if needed
 2. Make risk profile switching buttons at the top way more prominent
 3. All text on dashboard should be larger (viewable from further away) for the demo
-4. 
 
 # Dashboard API (to be formalised as OpenAPI)
 POST /auth/select-risk-code — mock session scoping

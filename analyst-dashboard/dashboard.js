@@ -6,9 +6,11 @@ const state = {
   statusFilter: "all",
   feedbackStatus: "all",
   feedbackCode: "all",
+  tipsTab: "unstructured",
   recipientType: "all",
   editingQuestions: false,
   basedOnUpdate: "",
+  surveyPublishedAt: null,
   experts: [
     { id: "e-01", type: "A", name: "Dr. Leila Haddad", subtitle: "Long-term expert", invite: "AC-7F2K-91", used: true, status: "Responded", activity: "Today, 09:42", riskCode: "R-1062" },
     { id: "e-02", type: "A", name: "M. Okafor", subtitle: "Long-term expert", invite: "AC-3M8Q-14", used: true, status: "Awaiting response", activity: "Yesterday", riskCode: "R-1062" },
@@ -42,8 +44,32 @@ const state = {
     { id: "s-03", handle: "Field contributor 08", type: "B", date: "Yesterday, 17:26", body: "Families from three nearby villages are staying with relatives near the market. I have not seen a formal site open yet.", tags: ["Displacement"], riskCode: null, status: "unreviewed" },
     { id: "s-04", handle: "M. Okafor", type: "A", date: "Yesterday, 14:03", body: "Local traders expect food prices to rise if the northern checkpoint remains closed through the end of the month.", tags: ["Markets"], riskCode: "R-1015", status: "reviewed" }
   ],
+  articleComments: [
+    { id: "ac-01", handle: "Field contributor 08", type: "B", date: "Today, 09:16", status: "unreviewed", riskCode: null, articleTitle: "Venezuela's new cabinet reshuffles army command as US warships remain offshore", source: "example-news.com", href: "../extension/design/article.html", paragraphIndex: 1, quote: "the moves targeted commanders seen as close to the previous leadership", stance: "disagree", comment: "Local contacts describe the rotations as broader than a routine reshuffle.", tags: ["Conflict", "Verification"] },
+    { id: "ac-02", handle: "Dr. Leila Haddad", type: "A", date: "Yesterday, 15:40", status: "unreviewed", riskCode: null, articleTitle: "Venezuela's new cabinet reshuffles army command as US warships remain offshore", source: "example-news.com", href: "../extension/design/article.html", paragraphIndex: 2, quote: "road checkpoints had multiplied since October, slowing deliveries of food and medical supplies", stance: "agree", comment: "The access delays are consistent with reports from two rural health partners.", tags: ["Humanitarian Aid", "Access"] }
+  ],
+  answerSamples: [
+    { scores: [4, 3, 5, 2, 4, 3, 4, 3], comments: ["Several local units report new checkpoints.", "The main corridor is slower, but still passable."] },
+    { scores: [3, 2, 4, 3, 3, 2, 4, 3], comments: ["Travel times rose this month."] },
+    { scores: [3, 4, 3, 4, 2, 3, 4, 3], comments: ["Clinics are open, though supplies vary by district."] },
+    { scores: [4, 3, 4, 4, 3, 5, 3, 4], comments: ["Prices are rising in smaller markets.", "Stock availability differs across the region."] },
+    { scores: [2, 3, 4, 3, 4, 3, 2, 4], comments: ["More reporting is needed from rural areas."] },
+    { scores: [1, 0, 1, 1, 0, 1, 0, 1], comments: ["Two villages reported new arrivals last week."] },
+    { scores: [1, 1, 0, 1, 1, 0, 1, 1], comments: ["One secondary route was temporarily closed."] },
+    { scores: [1, 1, 1, 0, 1, 1, 0, 1], comments: ["A clinic reported a short-term medicine shortage."] },
+    { scores: [1, 0, 1, 1, 0, 1, 1, 0], comments: ["No major change in aid access was noted."] },
+    { scores: [0, 1, 1, 0, 1, 1, 0, 1], comments: ["Local response coordination continues."] }
+  ],
   notifications: []
 };
+
+const articleContent = [
+  "CARACAS — Venezuela's interim government replaced at least four regional army commanders this week, officials said, in the most significant military shake-up since the removal of former defence minister Vladimir Padrino López.",
+  "The government described the changes as routine rotations. But two retired officers, speaking on condition of anonymity, said the moves targeted commanders seen as close to the previous leadership, and that several mid-ranking officers in Zulia and Táchira states had not been paid for over a month.",
+  "Aid agencies operating in rural Apure said road checkpoints had multiplied since October, slowing deliveries of food and medical supplies. ‘We are negotiating access village by village,’ said one coordinator.",
+  "Meanwhile, US naval vessels remained in waters off the northern coast. Washington says the deployment is aimed at drug trafficking routes, while Caracas has called it a pressure tactic tied to oil negotiations.",
+  "Analysts say the coming weeks will test whether the new cabinet can keep the armed forces united while delivering on promises of economic recovery."
+];
 
 const expertiseSamples = ["Economy", "Displacement", "Humanitarian Aid", "Women's Rights", "Conflict"];
 let riskCatalogue = [];
@@ -158,9 +184,14 @@ function updateSelectedRisk() {
   document.querySelector("#risk-alert-title").textContent = risk.title;
   document.querySelector("#source-summary").textContent = risk.summary || risk.title;
   const riskAlert = document.querySelector("#risk-alert");
-  riskAlert.querySelector(".priority-kicker").textContent = risk.trend.toLowerCase().includes("deteriorat") ? "RISK TREND DETERIORATED" : "CURRENT RISK PROFILE";
+  const trend = risk.trend.toLowerCase();
+  const direction = /deteriorat|worsen|increas|escalat/.test(trend) ? "increased" : /improv|decreas|reduc/.test(trend) ? "decreased" : /stable|unchanged/.test(trend) ? "unchanged" : "unknown";
+  const directionText = { increased: "Increased", decreased: "Decreased", unchanged: "Unchanged", unknown: "Not recorded" }[direction];
+  riskAlert.dataset.direction = direction;
+  riskAlert.querySelector(".priority-kicker").textContent = direction === "unknown" ? "RISK DIRECTION NOT RECORDED" : `RISK ${direction.toUpperCase()}`;
+  riskAlert.querySelector(".risk-alert-icon").textContent = { increased: "↑", decreased: "↓", unchanged: "→", unknown: "?" }[direction];
   riskAlert.querySelector(".risk-level-value").textContent = risk.level;
-  riskAlert.querySelector(".risk-trend-value").textContent = risk.trend;
+  riskAlert.querySelector(".risk-trend-value").textContent = directionText;
 }
 
 function currentExperts() {
@@ -190,7 +221,7 @@ function renderExpertTable(searchValue = "") {
     <tr>
       <td><button class="profile-link" data-expert-profile="${escapeHTML(expert.id)}"><span class="expert-avatar ${expert.type === "B" ? "type-b-avatar" : ""}">${escapeHTML(initialsFor(expert.internalAlias))}</span><span><strong>${escapeHTML(expert.internalAlias)}</strong><small>${expert.type === "B" ? "Informal expert" : "Long-term expert"}</small></span></button></td>
       <td><span class="type-label ${expert.type === "B" ? "type-b-label" : ""}"><i class="type-dot type-${expert.type.toLowerCase()}"></i>${expert.type === "B" ? "Informal" : "Long-term"}</span></td>
-      <td><span class="invite-cell">${escapeHTML(expert.invite)}</span>${expert.invite !== "—" ? `<button class="copy-invite" data-copy-invite="${escapeHTML(expert.id)}" title="Copy invite code" aria-label="Copy invite code">▢</button>` : ""}<small class="invite-state ${expert.used ? "code-used" : "code-unused"}">${expert.used ? "Used to onboard" : "Issued · not used"}</small></td>
+      <td><span class="invite-cell">${escapeHTML(expert.invite)}</span>${expert.invite !== "—" ? `<button class="copy-invite" data-copy-invite="${escapeHTML(expert.id)}" title="Copy invite code" aria-label="Copy invite code"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="1.5"></rect><path d="M16 8V5.8A1.8 1.8 0 0 0 14.2 4H5.8A1.8 1.8 0 0 0 4 5.8v8.4A1.8 1.8 0 0 0 5.8 16H8"></path></svg></button>` : ""}<small class="invite-state ${expert.used ? "code-used" : "code-unused"}">${expert.used ? "Used to onboard" : "Issued · not used"}</small></td>
       <td><span class="status-badge ${statusClass[expert.status] || ""}">${escapeHTML(expert.status)}</span></td>
       <td class="last-activity">${escapeHTML(expert.activity)}</td>
     </tr>`).join("");
@@ -206,6 +237,39 @@ function renderQuestions() {
   document.querySelector("#question-count").textContent = state.questions.length;
   document.querySelector("#question-kind-count").textContent = `${likertCount} Likert, ${binaryCount} binary`;
   document.querySelector("#add-question").hidden = !state.editingQuestions;
+}
+
+function renderSurveyAnswers() {
+  const responseCount = state.answerSamples[0].scores.length;
+  const rate = Math.round(responseCount / 8 * 100);
+  document.querySelector("#answers-total").textContent = responseCount;
+  document.querySelector("#answers-response-count").textContent = `${responseCount} responses`;
+  document.querySelector("#answers-rate").textContent = `${rate}%`;
+  document.querySelector("#answers-updated").textContent = state.surveyPublishedAt ? new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(state.surveyPublishedAt) : "Not published";
+  document.querySelector("#answers-code").textContent = state.riskCode;
+  document.querySelector("#answers-question-list").innerHTML = state.questions.map((question, index) => {
+    const sample = state.answerSamples[index];
+    const values = sample.scores.filter((score) => Number.isFinite(score));
+    const average = values.reduce((total, score) => total + score, 0) / (values.length || 1);
+    const isLikert = question.kind === "Likert";
+    const averageDisplay = isLikert ? `${average.toFixed(1)} / 5` : `${Math.round(average * 100)}%`;
+    let likertDeviation = "";
+    let likertInterval = "";
+    if (isLikert) {
+      const variance = values.length > 1 ? values.reduce((total, score) => total + (score - average) ** 2, 0) / (values.length - 1) : 0;
+      const standardDeviation = Math.sqrt(variance);
+      const intervalLow = Math.max(1, average - standardDeviation);
+      const intervalHigh = Math.min(5, average + standardDeviation);
+      const rangeLeft = ((intervalLow - 1) / 4) * 100;
+      const rangeWidth = ((intervalHigh - intervalLow) / 4) * 100;
+      const averagePosition = ((average - 1) / 4) * 100;
+      const intervalLabel = `${intervalLow.toFixed(1)}–${intervalHigh.toFixed(1)}`;
+      likertDeviation = `<div><span>Standard deviation</span><strong>${standardDeviation.toFixed(2)}</strong></div>`;
+      likertInterval = `<div class="answer-interval"><div class="answer-interval-heading"><span>Average ± 1 SD</span><strong>${intervalLabel}</strong></div><div class="answer-interval-track" role="img" aria-label="Average ${averageDisplay}; average plus or minus one standard deviation is ${intervalLabel}"><span class="answer-interval-range" style="left:${rangeLeft}%;width:${rangeWidth}%"></span><span class="answer-interval-mean" style="left:${averagePosition}%"></span></div><div class="answer-interval-axis"><span>1</span><span>3</span><span>5</span></div></div>`;
+    }
+    const highlights = sample.comments;
+    return `<article class="answer-question"><header><span class="question-order">${String(index + 1).padStart(2, "0")}</span><span class="question-kind ${question.kind === "Binary" ? "binary" : ""}">${question.kind}</span><p>${escapeHTML(question.text)}</p></header><div class="answer-metrics"><div><span>${isLikert ? "Average score" : "Yes responses"}</span><strong>${averageDisplay}</strong></div>${likertDeviation}<div><span>Answers</span><strong>${values.length}</strong></div></div>${likertInterval}<div class="answer-comments"><span class="answer-comments-label">Comment highlights</span>${highlights.map((comment) => `<blockquote>${escapeHTML(comment)}</blockquote>`).join("") || `<p class="muted">No comments on this question.</p>`}</div></article>`;
+  }).join("");
 }
 
 function openExpertProfile(expertId) {
@@ -228,6 +292,48 @@ function renderFeedback() {
   document.querySelector("#feedback-empty").hidden = items.length > 0;
 }
 
+function renderArticleComments() {
+  const items = state.articleComments.slice().sort((first, second) => Number(second.status === "unreviewed") - Number(first.status === "unreviewed")).filter((item) => {
+    const matchesStatus = state.feedbackStatus === "all" || item.status === state.feedbackStatus;
+    const matchesCode = state.feedbackCode === "all" || (state.feedbackCode === "unlinked" ? !item.riskCode : item.riskCode === state.feedbackCode);
+    return matchesStatus && matchesCode;
+  });
+  document.querySelector("#article-comment-list").innerHTML = items.map((item) => `<article class="article-comment-card ${item.status === "unreviewed" ? "tip-unreviewed" : "reviewed"}"><div class="article-comment-head"><div><strong>${escapeHTML(item.handle)}</strong><small>${item.type === "B" ? "Informal" : "Long-term"} · ${escapeHTML(item.date)}</small></div><span class="status-badge ${item.status === "unreviewed" ? "status-awaiting" : "status-onboarded"}">${item.status === "unreviewed" ? "Unreviewed" : "Reviewed"}</span></div><button class="article-title-link" data-open-article="${escapeHTML(item.id)}">${escapeHTML(item.articleTitle)} <span>↗</span></button><div class="article-source">${escapeHTML(item.source)} · ${item.riskCode ? escapeHTML(item.riskCode) : "Unlinked risk"}</div><blockquote class="commented-snippet">${escapeHTML(item.quote)}</blockquote>${item.stance ? `<span class="stance-pill ${escapeHTML(item.stance)}">${item.stance === "agree" ? "Agree" : "Disagree"}</span>` : ""}<p class="article-expert-comment">${escapeHTML(item.comment || "No additional comment provided.")}</p><div class="article-comment-actions"><button class="mini-action" data-open-article="${escapeHTML(item.id)}">View article with comments</button><button class="mini-action review-action" data-review-article="${escapeHTML(item.id)}">${item.status === "reviewed" ? "Reviewed ✓" : "Mark reviewed"}</button></div></article>`).join("");
+  document.querySelector("#article-comments-empty").hidden = items.length > 0;
+}
+
+function renderTipsTab() {
+  const isRaw = state.tipsTab === "unstructured";
+  document.querySelectorAll("[data-tips-tab]").forEach((tab) => {
+    const selected = tab.dataset.tipsTab === state.tipsTab;
+    tab.classList.toggle("active", selected);
+    tab.setAttribute("aria-selected", String(selected));
+  });
+  document.querySelector("#unstructured-panel").hidden = !isRaw;
+  document.querySelector("#article-comments-panel").hidden = isRaw;
+}
+
+function renderArticleReader(commentId) {
+  const selected = state.articleComments.find((item) => item.id === commentId);
+  if (!selected) return;
+  const linkedComments = state.articleComments.filter((item) => item.articleTitle === selected.articleTitle);
+  const paragraphs = articleContent.map((paragraph, paragraphIndex) => {
+    const annotations = linkedComments.filter((item) => item.paragraphIndex === paragraphIndex);
+    let markup = escapeHTML(paragraph);
+    annotations.forEach((annotation, annotationIndex) => {
+      const start = paragraph.indexOf(annotation.quote);
+      if (start < 0) return;
+      const before = escapeHTML(paragraph.slice(0, start));
+      const quote = escapeHTML(annotation.quote);
+      const after = escapeHTML(paragraph.slice(start + annotation.quote.length));
+      markup = `${before}<mark class="reader-highlight ${annotation.stance || ""}" id="reader-mark-${escapeHTML(annotation.id)}">${quote}</mark>${after}`;
+      if (annotationIndex > 0) return;
+    });
+    return `<p>${markup}</p>${annotations.map((annotation) => `<aside class="reader-comment"><span class="reader-comment-pin">${annotation.stance === "agree" ? "+" : "−"}</span><div><strong>${escapeHTML(annotation.handle)}${annotation.stance ? ` · ${annotation.stance === "agree" ? "Agrees" : "Disagrees"}` : ""}</strong><p>${escapeHTML(annotation.comment || "No additional comment provided.")}</p></div></aside>`).join("")}`;
+  }).join("");
+  openModal(`<div class="modal-header"><div><p class="eyebrow">ANNOTATED ARTICLE · ${escapeHTML(selected.source)}</p><h2 id="modal-title">${escapeHTML(selected.articleTitle)}</h2></div><button class="modal-close" data-close-modal aria-label="Close article">×</button></div><div class="reader-toolbar"><span>${linkedComments.length} expert comments</span><a href="${escapeHTML(selected.href)}" target="_blank" rel="noopener">Open article prototype ↗</a></div><article class="reader-article">${paragraphs}</article>`);
+}
+
 function renderLatestFeedback() {
   const latest = state.submissions.filter((item) => item.riskCode === state.riskCode).slice().sort((first, second) => Number(second.status === "unreviewed") - Number(first.status === "unreviewed")).slice(0, 3);
   document.querySelector("#latest-feedback").innerHTML = latest.map((item) => `<div class="latest-item ${item.status === "unreviewed" ? "unreviewed" : ""}"><span class="latest-initial">${escapeHTML(initialsFor(item.handle))}</span><span><strong>${escapeHTML(item.handle)}</strong><small>${escapeHTML(item.body.slice(0, 80))}${item.body.length > 80 ? "…" : ""}</small></span><time>${item.status === "unreviewed" ? "NEW" : escapeHTML(item.date.split(",")[0])}</time></div>`).join("") || `<div class="history-empty">No voluntary information linked to this Risk Code.</div>`;
@@ -247,6 +353,8 @@ function renderSummary() {
   document.querySelector("#feedback-nav-count").textContent = unreviewedCount;
   document.querySelector("#feedback-count-chip").textContent = `${unreviewedCount} unreviewed`;
   document.querySelector("#unreviewed-filter-count").textContent = unreviewedCount;
+  document.querySelector("#raw-tip-count").textContent = state.submissions.filter((item) => item.status === "unreviewed" && item.riskCode === state.riskCode).length;
+  document.querySelector("#article-comment-count").textContent = state.articleComments.filter((item) => item.status === "unreviewed" && (!item.riskCode || item.riskCode === state.riskCode)).length;
   document.querySelector("#home-unreviewed-count").textContent = unreviewedCount;
   document.querySelector("#overview-survey-count").textContent = state.questions.length;
   document.querySelector("#experts-total").textContent = experts.length;
@@ -259,13 +367,18 @@ function renderSummary() {
   document.querySelector("#survey-page-status").classList.toggle("published-badge", state.surveyStatus === "Published");
   document.querySelector("#publish-survey").innerHTML = state.surveyStatus === "Published" ? `<span class="button-icon">✓</span> Published` : `<span class="button-icon">↗</span> Publish survey`;
   document.querySelector("#publish-survey").disabled = state.surveyStatus === "Published";
+  document.querySelector("#answers-nav").disabled = state.surveyStatus !== "Published";
+  document.querySelector("#answers-nav").title = state.surveyStatus === "Published" ? "View survey response analytics" : "Available after survey publication";
 }
 
 function renderAll() {
   renderSummary();
   renderExpertTable(document.querySelector("#experts-search").value);
   renderQuestions();
+  renderSurveyAnswers();
   renderFeedback();
+  renderArticleComments();
+  renderTipsTab();
   renderLatestFeedback();
   renderNotifications();
 }
@@ -422,6 +535,15 @@ document.addEventListener("click", async (event) => {
   if (deleteQuestion) { state.questions.splice(Number(deleteQuestion.dataset.deleteQuestion), 1); renderAll(); return; }
   const addQuestion = event.target.closest("#add-question");
   if (addQuestion) { state.questions.push({ kind: "Likert", text: "New question: enter question text" }); renderQuestions(); document.querySelector(".question-text:last-of-type")?.focus(); return; }
+  const articleButton = event.target.closest("[data-open-article]");
+  if (articleButton) { renderArticleReader(articleButton.dataset.openArticle); return; }
+  const articleReviewButton = event.target.closest("[data-review-article]");
+  if (articleReviewButton) {
+    const articleComment = state.articleComments.find((item) => item.id === articleReviewButton.dataset.reviewArticle);
+    articleComment.status = articleComment.status === "reviewed" ? "unreviewed" : "reviewed";
+    renderAll();
+    return;
+  }
   const copyButton = event.target.closest("[data-copy-invite]");
   if (copyButton) {
     const expert = state.experts.find((item) => item.id === copyButton.dataset.copyInvite);
@@ -448,8 +570,15 @@ document.addEventListener("click", async (event) => {
   if (replyButton) { openReplyModal(replyButton.dataset.reply); return; }
   if (event.target.closest("#publish-survey") && state.surveyStatus !== "Published") {
     state.surveyStatus = "Published";
+    state.surveyPublishedAt = new Date();
     renderAll();
+    showToast("Survey answers are now available");
     showToast(`Survey published to ${currentExperts().length} experts`);
+  }
+  const tipsTab = event.target.closest("[data-tips-tab]");
+  if (tipsTab) {
+    state.tipsTab = tipsTab.dataset.tipsTab;
+    renderTipsTab();
   }
 });
 
@@ -471,7 +600,7 @@ document.addEventListener("change", (event) => {
     renderAll();
     showToast(submission.riskCode ? `Submission linked to ${submission.riskCode}` : "Risk Code link removed");
   }
-  if (event.target.id === "feedback-code-filter") { state.feedbackCode = event.target.value; renderFeedback(); }
+  if (event.target.id === "feedback-code-filter") { state.feedbackCode = event.target.value; renderFeedback(); renderArticleComments(); }
 });
 
 document.addEventListener("click", (event) => {
@@ -480,6 +609,7 @@ document.addEventListener("click", (event) => {
     state.feedbackStatus = feedbackFilter.dataset.feedbackStatus;
     document.querySelectorAll("[data-feedback-status]").forEach((button) => button.classList.toggle("selected", button.dataset.feedbackStatus === state.feedbackStatus));
     renderFeedback();
+    renderArticleComments();
   }
   const recipientChoice = event.target.closest("[data-recipient]");
   if (recipientChoice) {
