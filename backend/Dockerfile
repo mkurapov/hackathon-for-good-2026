@@ -12,7 +12,7 @@ RUN pip install --no-cache-dir fastapi uvicorn requests python-dotenv pydantic \
     && mkdir -p /app/backend/.cache /data \
     && chown -R app:app /app /data
 
-COPY --chown=app:app acaps_client.py api.py daily_job.py data.py db.py latest.py questions.py openapi.yaml ./backend/
+COPY --chown=app:app acaps_client.py api.py daily_job.py data.py db.py latest.py questions.py seed_demo.py openapi.yaml ./backend/
 
 WORKDIR /app/backend
 USER app

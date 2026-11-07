@@ -61,6 +61,35 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationError'
 
+  /invites/{invite_code}:
+    get:
+      tags: [Registration]
+      operationId: previewInvite
+      summary: Show which group and risk an invite code belongs to
+      description: |
+        Lets the client show the expert what they are joining before they register.
+        The invite code itself is the credential, so no token is needed.
+      security: []
+      parameters:
+        - name: invite_code
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Invite details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitePreview'
+        '404':
+          description: Invite code not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /experts:
     post:
       tags: [Registration]
@@ -94,6 +123,19 @@ paths:
           $ref: '#/components/responses/ValidationError'
 
   /experts/me:
+    get:
+      tags: [Registration]
+      operationId: getExpert
+      summary: Get the expert's own profile, including the group and risk they follow
+      responses:
+        '200':
+          description: The expert's profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExpertProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
     patch:
       tags: [Registration]
       operationId: updateExpert
@@ -269,6 +311,32 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationError'
 
+  /contact-requests:
+    post:
+      tags: [Contributions]
+      operationId: requestContact
+      summary: Ask ACAPS to get in touch
+      description: |
+        ACAPS uses the contact details it already holds for the expert, so none are sent.
+        The optional note says what it is about.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContactRequestCreate'
+      responses:
+        '201':
+          description: Request stored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
 components:
   securitySchemes:
     expertToken:
@@ -423,6 +491,33 @@ components:
               type: string
               description: Bearer token for all expert endpoints. Shown once.
 
+    ExpertProfile:
+      allOf:
+        - $ref: '#/components/schemas/Expert'
+        - type: object
+          required: [group_name, risk_id]
+          properties:
+            group_name:
+              type: string
+            risk_id:
+              type: string
+            risk_title:
+              type: [string, 'null']
+              description: Taken from the risk's latest survey; null until one exists
+
+    InvitePreview:
+      type: object
+      required: [group_name, risk_id]
+      properties:
+        group_name:
+          type: string
+        risk_id:
+          type: string
+        risk_title:
+          type: [string, 'null']
+        country_iso3:
+          type: [string, 'null']
+
     LikertQuestion:
       type: object
       required: [id, text, dimension]
@@ -485,6 +580,10 @@ components:
           minimum: 1
           maximum: 5
           description: 1 (low) to 5 (high); null = skipped / don't know
+        comment:
+          type: [string, 'null']
+          maxLength: 2000
+          description: Optional remark on this question
 
     BinaryAnswer:
       type: object
@@ -495,6 +594,10 @@ components:
         value:
           type: [boolean, 'null']
           description: null = skipped / don't know
+        comment:
+          type: [string, 'null']
+          maxLength: 2000
+          description: Optional remark on this question
 
     SurveyResponseInput:
       type: object
@@ -585,7 +688,8 @@ components:
 
     ArticleCommentCreate:
       type: object
-      required: [url, risk_id, text]
+      description: At least one of `text`, `stance` or `quote` must be given.
+      required: [url, risk_id]
       properties:
         url:
           type: string
@@ -595,6 +699,15 @@ components:
         text:
           type: string
           maxLength: 5000
+          default: ''
+        stance:
+          type: [string, 'null']
+          enum: [agree, disagree, null]
+          description: Quick Agree / Disagree, on the whole article or on `quote`
+        quote:
+          type: [string, 'null']
+          maxLength: 2000
+          description: Passage the expert highlighted, if the comment is about one
 
     ArticleComment:
       allOf:
@@ -603,6 +716,25 @@ components:
           required: [comment_id, created_at]
           properties:
             comment_id:
+              type: string
+            created_at:
+              type: string
+              format: date-time
+
+    ContactRequestCreate:
+      type: object
+      properties:
+        note:
+          type: [string, 'null']
+          maxLength: 1000
+
+    ContactRequest:
+      allOf:
+        - $ref: '#/components/schemas/ContactRequestCreate'
+        - type: object
+          required: [request_id, created_at]
+          properties:
+            request_id:
               type: string
             created_at:
               type: string
