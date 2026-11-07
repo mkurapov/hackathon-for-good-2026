@@ -107,7 +107,7 @@ flowchart TD
 | Variable | Used by | Notes |
 |---|---|---|
 | `ACAPS_EMAIL`, `ACAPS_PASSWORD` | `acaps_client.py` | Registered ACAPS API account |
-| `LLM_BASE_URL`, `LLM_MODEL` | `questions.py` | OpenAI-compatible `/chat/completions` endpoint. Model: |
+| `LLM_BASE_URL`, `LLM_MODEL` | `questions.py` | LM Studio v1 API base URL (for example `http://localhost:1234/api/v1`) and model name. Calls `/chat` with `input`, `context_length`, reasoning disabled, and `temperature`. |
 | `LLM_API_KEY` | `questions.py` | Optional |
 | `CSV_PATH` | `data.py` | Defaults to `risk-radar-export.csv` next to the script |
 | `DB_PATH` | `db.py` | Defaults to `groundtruth.db` next to the script |

@@ -126,25 +126,31 @@ def build_context(risk: dict, max_context_tokens: int = 3000) -> tuple[dict, str
 
 
 # ---------- LLM call ----------
-def call_llm(messages: list[dict], temperature: float = 0.3, timeout: int = 120) -> str:
-    base_url = os.environ["LLM_BASE_URL"].rstrip("/")  # e.g. https://my-server/v1
+def call_llm(messages: list[dict], temperature: float = 0.3, timeout: int = 300) -> str:
+    base_url = os.environ["LLM_BASE_URL"].rstrip("/")  # e.g. http://localhost:1234/api/v1
     headers = {"Content-Type": "application/json"}
     if api_key := os.getenv("LLM_API_KEY"):
         headers["Authorization"] = f"Bearer {api_key}"
 
     payload = {
         "model": os.environ["LLM_MODEL"],
-        "messages": messages,
+        "input": "\n\n".join(
+            f"{'System instructions' if message['role'] == 'system' else 'User input'}:\n"
+            f"{message['content']}"
+            for message in messages
+        ),
+        "context_length": 8000,
+        "reasoning": "off",
         "temperature": temperature,
-        "max_tokens": 1500,
-        "response_format": {"type": "json_object"},
+        "max_output_tokens": 1500,
     }
-    r = requests.post(f"{base_url}/chat/completions", headers=headers, json=payload, timeout=timeout)
-    if r.status_code == 400:  # server may not support JSON mode: retry without it
-        payload.pop("response_format")
-        r = requests.post(f"{base_url}/chat/completions", headers=headers, json=payload, timeout=timeout)
+    r = requests.post(f"{base_url}/chat", headers=headers, json=payload, timeout=timeout)
     r.raise_for_status()
-    return r.json()["choices"][0]["message"]["content"]
+    response = r.json()
+    for item in response.get("output", []):
+        if item.get("type") == "message" and isinstance(item.get("content"), str):
+            return item["content"]
+    raise ValueError("LM Studio response did not contain a message in its output")
 
 
 def extract_json(text: str) -> dict:

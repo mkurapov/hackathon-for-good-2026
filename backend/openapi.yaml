@@ -9,9 +9,11 @@ info:
 
     **How it fits together.** A daily job (not part of this API) fetches the latest ACAPS
     Risk Radar data per risk, builds a compact context from the 3 most recent updates,
-    asks the LLM for 5 Likert (1-5) and 5 yes/no questions, and stores one *survey* per
-    `(risk_id, based_on_update)`. This API serves those surveys to experts and collects
-    their input.
+    asks the configured LM Studio model for 5 Likert (1-5) and 5 yes/no questions using
+    `POST /api/v1/chat` with `model`, `input`, `context_length`, `reasoning: off`,
+    `temperature`, and `max_output_tokens`, and stores one *survey* per
+    `(risk_id, based_on_update)`. This internal LM Studio call is not an endpoint of this
+    API. This API serves those surveys to experts and collects their input.
 
     **Anonymity.** Each expert chooses their own level (`anonymity_level`) and can change it
     at any time. Individual contributions are never attributed publicly, whatever the level.
