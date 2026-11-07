@@ -9,11 +9,11 @@ Manifest V3, plain JavaScript, no build step.
 1. Start the API in Docker with a demo panel and survey (no LLM or ACAPS credentials needed). From the repo root:
 
    ```bash
-   docker compose up -d --build
-   docker compose exec api python seed_demo.py   # prints the invite code DEMO-VEN-2026
+   docker compose -f docker/docker-compose.yml up -d --build
+   docker compose -f docker/docker-compose.yml exec api python seed_demo.py   # prints the invite code DEMO-VEN-2026
    ```
 
-   The database lives in the `groundtruth-data` volume. `docker compose down -v` wipes it.
+   The database lives in the `groundtruth-data` volume. `docker compose -f docker/docker-compose.yml down -v` wipes it.
 
 2. Load the extension: open `about:debugging#/runtime/this-firefox` in Firefox, click **Load Temporary Add-on…** and pick `extension/manifest.json`. A welcome tab opens.
 
@@ -27,7 +27,7 @@ Manifest V3, plain JavaScript, no build step.
 
    Open <http://localhost:8766/article.html>. The toast appears. Select some text to get the Agree / Disagree / Comment bar.
 
-`docker compose exec api python seed_demo.py --reset` removes the demo experts and their answers, to start over.
+`docker compose -f docker/docker-compose.yml exec api python seed_demo.py --reset` removes the demo experts and their answers, to start over.
 
 ## What it does
 

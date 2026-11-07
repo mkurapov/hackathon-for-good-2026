@@ -1,0 +1,27 @@
+# Run from the repo root: docker compose -f docker/docker-compose.yml up -d --build
+# The project name is pinned so volume names stay the same as before this file moved.
+name: hackathon-for-good-2026
+
+services:
+  api:
+    build: ../backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - path: ../.env
+        required: false
+    volumes:
+      - groundtruth-data:/data
+    restart: unless-stopped
+
+  dashboard:
+    build:
+      context: ../analyst-dashboard
+      additional_contexts:
+        docker: .
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+
+volumes:
+  groundtruth-data:
