@@ -9,5 +9,9 @@ export const DEFAULT_ANONYMITY = 'known_to_acaps';
 // a real release; it is the demo code from backend/seed_demo.py.
 export const PREFILL_INVITE_CODE = 'DEMO1';
 
-// How often the background checks for a new survey.
+// How often the background refreshes the expert's profile and survey.
 export const REFRESH_MINUTES = 60;
+
+// How often the background checks for a newly published survey, so the toolbar badge appears
+// soon after an analyst publishes one. 3 seconds is for the demo; use a minute or more for a release.
+export const SURVEY_CHECK_SECONDS = 3;

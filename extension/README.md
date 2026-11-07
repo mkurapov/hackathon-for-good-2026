@@ -38,7 +38,7 @@ Manifest V3, plain JavaScript, no build step.
 | Survey | One question per screen, Yes / No questions first, then 1–5 forecasts. Each answer saves as a draft (`PUT …/responses`, `status: draft`) and moves on by itself unless a comment was typed. "Don't know" sends `null`. Next always works. The last question needs an explicit Submit. Keyboard: 1–5, Y / N, D, Enter. |
 | News article | On the listed news sites, the content script sends the article to `POST /articles/match`. If it matches the expert's risk, a toast offers one-click Agree / Disagree (sent at once) and links to give more detail or take the survey. Selecting text shows a bar with Agree, Disagree and Comment. The passage is marked on the page and added to the article feedback, which is sent as one `POST /articles/comments` per item (`stance`, `quote`, `text`). |
 | Invite link | `GET /join?code=…` on the API. The extension reads the code from that page and opens the welcome tab on the confirm step. |
-| Badge | Shows `1` while a survey is waiting. The background checks every 60 minutes. |
+| Badge | Shows `1` (and a tooltip naming the risk) while a survey is waiting. The background checks for a newly published survey every 3 seconds for the demo (`SURVEY_CHECK_SECONDS`) and refreshes the full profile every 60 minutes. |
 
 New experts register as `known_to_acaps`, since ACAPS invited them and already has their details. They can change this in Settings.
 

@@ -15,7 +15,7 @@
 //   pendingView     { view, focus } for the sidebar to show next
 //   dismissed:<url> the expert closed the toast on that article
 import { api, ApiError } from './lib/api.js';
-import { DEFAULT_ANONYMITY, PREFILL_INVITE_CODE, REFRESH_MINUTES } from './config.js';
+import { DEFAULT_ANONYMITY, PREFILL_INVITE_CODE, REFRESH_MINUTES, SURVEY_CHECK_SECONDS } from './config.js';
 
 const local = browser.storage.local;
 const session = browser.storage.session;
@@ -56,10 +56,31 @@ async function refresh() {
   await updateBadge();
 }
 
+// Only fetches the current survey, so it is cheap enough to run every few seconds. Open popups and
+// sidebars are told to re-render when a different survey (or none) comes back.
+async function checkSurvey() {
+  const auth = await getLocal('auth');
+  if (!auth) return;
+  let survey;
+  try {
+    survey = (await call(`/experts/${auth.expertId}/surveys/current`)) || null;
+  } catch (err) {
+    return; // offline: keep the badge as it is until the next check
+  }
+  const before = await getLocal('survey');
+  await local.set({ survey });
+  await updateBadge();
+  if ((before?.survey_id || null) !== (survey?.survey_id || null)) broadcast('state-changed');
+}
+
 async function updateBadge() {
   const survey = await getLocal('survey');
   await browser.action.setBadgeBackgroundColor({ color: '#0096ba' });
+  await browser.action.setBadgeTextColor({ color: '#ffffff' });
   await browser.action.setBadgeText({ text: survey ? '1' : '' });
+  await browser.action.setTitle({
+    title: survey ? `ACAPS: a survey on ${survey.risk_title} is waiting` : 'ACAPS',
+  });
 }
 
 function emptyDraft() {
@@ -400,10 +421,20 @@ browser.tabs.onUpdated.addListener((tabId, change) => {
 
 browser.alarms.onAlarm.addListener(alarm => {
   if (alarm.name === 'refresh') refresh().then(() => broadcast('state-changed'));
+  if (alarm.name === 'check-survey') checkSurvey();
 });
 
-browser.runtime.onInstalled.addListener(({ reason }) => {
+function createAlarms() {
   browser.alarms.create('refresh', { periodInMinutes: REFRESH_MINUTES });
+  browser.alarms.create('check-survey', { periodInMinutes: SURVEY_CHECK_SECONDS / 60 });
+}
+
+// Firefox may run alarms less often than asked, so also check on a timer while this script is
+// running. The alarm wakes the script again after Firefox suspends it.
+setInterval(checkSurvey, SURVEY_CHECK_SECONDS * 1000);
+
+browser.runtime.onInstalled.addListener(({ reason }) => {
+  createAlarms();
   if (reason === 'install') {
     browser.tabs.create({ url: browser.runtime.getURL('src/onboarding/onboarding.html') });
   }
@@ -411,6 +442,6 @@ browser.runtime.onInstalled.addListener(({ reason }) => {
 });
 
 browser.runtime.onStartup.addListener(() => {
-  browser.alarms.create('refresh', { periodInMinutes: REFRESH_MINUTES });
+  createAlarms();
   refresh();
 });
