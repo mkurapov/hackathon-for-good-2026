@@ -1,6 +1,10 @@
 # seed_demo.py: create a demo group and survey so the extension can be tried without the LLM
 # or ACAPS credentials. Safe to run more than once.
 #
+# Uses the same risk as daily_job.py (R1011) and the survey ID the daily job computes for its
+# newest update, so the daily job sees this survey as already generated. `daily_job.py --force`
+# replaces these hand-written questions with LLM ones, as long as no expert has answered yet.
+#
 #   python seed_demo.py            -> prints the invite code and invite link
 #   python seed_demo.py --reset    -> deletes the demo group's experts and answers first
 #   python seed_demo.py --draft    -> leaves the survey as a draft, to publish from the analyst dashboard
@@ -8,16 +12,20 @@ import argparse
 from datetime import datetime, timezone
 
 import db
-from questions import BinaryQuestion, LikertQuestion, Survey
+from daily_job import RISK_ID
+from questions import BinaryQuestion, LikertQuestion, Survey, make_survey_id
 
 GROUP_ID = "grp_demo_venezuela"
 INVITE_CODE = "DEMO-VEN-2026"
-RISK_ID = "R9001"
-RISK_TITLE = "Venezuela: instability after the political transition"
-BASED_ON_UPDATE = "01/11/2026"
+# Copied from the ACAPS API for R1011, so this works offline. Running the daily job overwrites
+# the risk details with live data.
+RISK_TITLE = "US military build-up in the Caribbean triggers internal destabilisation in Venezuela and heightens humanitarian needs"
+RISK_LEVEL = "Medium"
+RISK_TREND = "Improved"
+BASED_ON_UPDATE = "01/04/2026"  # date of R1011's newest update
 SUMMARY = (
-    "Tensions between security forces and the new cabinet, pressure on released opposition figures, "
-    "and fragile rural food supply chains point to a risk of localised service collapse in the next quarter."
+    "Four months after the capture of Nicolás Maduro and the transfer of government to Delcy Rodríguez, "
+    "the overall risk environment in Venezuela remains stable, with tentative signs of short-term improvement."
 )
 
 LIKERT = [
@@ -43,7 +51,7 @@ def main() -> None:
     args = parser.parse_args()
 
     survey = Survey(
-        survey_id=f"{RISK_ID}_2026-11-01",
+        survey_id=make_survey_id(RISK_ID, BASED_ON_UPDATE),
         risk_id=RISK_ID,
         risk_title=RISK_TITLE,
         based_on_update=BASED_ON_UPDATE,
@@ -62,7 +70,12 @@ def main() -> None:
             conn.commit()
         if conn.execute("SELECT 1 FROM groups WHERE group_id = ?", (GROUP_ID,)).fetchone() is None:
             db.add_group(conn, GROUP_ID, "Venezuela expert panel (demo)", RISK_ID, INVITE_CODE, "VEN")
-        db.upsert_risk(conn, RISK_ID, RISK_TITLE, ["Venezuela"], "High", "Deteriorating", SUMMARY)
+        else:  # databases seeded before the demo used R1011 point the group at the old risk
+            conn.execute("UPDATE groups SET risk_id = ? WHERE group_id = ?", (RISK_ID, GROUP_ID))
+            conn.execute("UPDATE invites SET risk_id = ? WHERE group_id = ?", (RISK_ID, GROUP_ID))
+        # keep live details from the daily job if it already ran
+        if conn.execute("SELECT 1 FROM risks WHERE risk_id = ?", (RISK_ID,)).fetchone() is None:
+            db.upsert_risk(conn, RISK_ID, RISK_TITLE, ["Venezuela"], RISK_LEVEL, RISK_TREND, SUMMARY)
         if not db.survey_exists(conn, survey.survey_id):
             db.save_survey(conn, survey)
         status = "draft" if args.draft else "published"

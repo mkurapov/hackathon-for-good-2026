@@ -128,7 +128,7 @@ try:
     d.find_element(By.CSS_SELECTOR, "[data-send]").click()
     wait.until(EC.text_to_be_present_in_element((By.CSS_SELECTOR, ".ext-body"), "Sent to ACAPS"))
     notes = db("SELECT * FROM notes")
-    check("note stored", len(notes) == 1 and notes[0]["risk_id"] == "R9001", notes[0]["text"] if notes else "")
+    check("note stored", len(notes) == 1 and notes[0]["risk_id"] == "R1011", notes[0]["text"] if notes else "")
     d.find_element(By.CSS_SELECTOR, "[data-contact-open]").click()
     d.find_element(By.CSS_SELECTOR, "[data-contact-note]").send_keys("Displacement in Apure")
     d.find_element(By.CSS_SELECTOR, "[data-contact-send]").click()

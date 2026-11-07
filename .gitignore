@@ -6,3 +6,5 @@ __pycache__/
 backend/groundtruth.db
 node_modules/
 dist/
+backend/.cache/
+.claude/

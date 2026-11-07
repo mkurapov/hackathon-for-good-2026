@@ -58,7 +58,7 @@ flowchart TD
 | `latest.py` | Turns a risk into a compact LLM context: 3 most recent updates, or rationale + updates if there are fewer than 3. Strips citation links | `render_context` produces the text | |
 | `questions.py` | Prompt, LLM call, JSON extraction/validation, retries. Assigns question IDs (`L1`-`L5`, `B1`-`B5`) and `survey_id`. Returns a `Survey` matching the OpenAPI schema | Token budget: 3 updates, falls back to 1 | |
 | `db.py` | SQLite storage: groups, experts, surveys, normalized `survey_questions`, responses, notes, article comments, contact requests | Questions are indexed by `risk_id` and `based_on_update`; expert tokens are stored hashed | |
-| `seed_demo.py` | Creates a demo group (invite code `DEMO-VEN-2026`) and survey, without the LLM, for trying the extension | `--reset` removes demo experts and answers | |
+| `seed_demo.py` | Creates a demo group (invite code `DEMO-VEN-2026`) and survey for `R1011`, without the LLM, for trying the extension. Uses the survey ID the daily job computes, so `daily_job.py --force` can replace its questions | `--reset` removes demo experts and answers | |
 | `daily_job.py` | Demo orchestrator for hardcoded risk `R1011`; skips existing surveys and closed risks, otherwise generates and saves | One failing risk does not stop the job | |
 | `analyst_api.py` | `/analyst/*` routes for the analyst dashboard: risks, expert onboarding (personal invite codes), survey review/edit/publish, tips inbox, mock mass notifications | Needs `ANALYST_API_KEY`; the dashboard's proxy (Vite in dev, nginx in Docker) adds the `X-Analyst-Key` header | |
 | `api.py` | FastAPI app; authentication, request validation, and API routes backed by SQLite | Article matching currently checks exact risk-ID/title text matches | |
@@ -151,7 +151,7 @@ Or run the API in Docker from the repo root. `docker/docker-compose.yml` builds 
 ```bash
 docker compose -f docker/docker-compose.yml up -d --build
 docker compose -f docker/docker-compose.yml exec api python seed_demo.py
-docker compose -f docker/docker-compose.yml exec api python daily_job.py --risk R1043
+docker compose -f docker/docker-compose.yml exec api python daily_job.py
 ```
 
 Inside the container, `localhost` is the container itself. Point `LLM_BASE_URL` at `http://host.docker.internal:1234/api/v1` to reach LM Studio on the host.
