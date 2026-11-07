@@ -7,6 +7,11 @@ This is a browser extension for humanitarian experts that will provide regular f
 ### Users
 
 The typical profiles of humanitarian experts are:
+- Conflict experts, often active on social media
+- Anticipatory action and early warning practitioners
+- Researchers
+- Local NGO leaders
+- Anyone else with a strong interest in anticipatory analysis
 
 - User registration:
 1. ACAPS sends a link (random code) that is linked to an agent and within a conflict
@@ -17,11 +22,7 @@ FRONTEND SPEC STEPS
 7. If above yes: ask open-ended questions and save intermediate answers even without submission
 7. Ask if they would like to update their info/someone from ACAPS to get in touch with them for further discussion
 8. Different workflow: if the expert is reading a news article/thread on twitter, etc. where the topics discussed are about the conflict they are consulting on, trigger a dialog through which they can take the survey. The backend will have an API that would match the metadata/title to the current risk and output whether an existing 
-- Conflict experts, often active on social media
-- Anticipatory action and early warning practitioners
-- Researchers
-- Local NGO leaders
-- Anyone else with a strong interest in anticipatory analysis
+
 
 ### User flows
 
@@ -36,6 +37,7 @@ A user must be able to pass along unstructured data to ACAPS (text based). It wi
 #### 3. Go through a directed ACAPS created survey (with 10 questions)
 
 The example format will be akin to the text below, with five forecasting questions, and five binary questions about the verification of data.
+The questions will be asked one at a time.
 
 ##### Predictive, qualitatitve questions
 *(Designed for Humanitarian/Conflict Experts to assess Likelihood and Urgency based on ground truth)*
@@ -63,4 +65,11 @@ Additionally, the expert could highlight text about the article, attach a commen
 
 ### Requirements
 - It should match the styling of https://acaps.org site
+- Little visual clutter, it must not overwhelm the expert, the easier the experience for them, the more likely they will be willing to provide information.
 - The first target platform is Firefox (since it has VPN - more secure for these humanitarian experts).
+
+### UI requirements
+- **Main surface:** both a toolbar popup and a Firefox sidebar. The popup is for quick actions (outstanding survey, quick unstructured feedback). The sidebar is for longer tasks (surveys, article feedback), so the expert can read sources while answering. The popup has a button to open the sidebar.
+- **Article match prompt:** when a browsed article matches one of the expert's assigned risks, show a small, dismissible in-page toast (e.g. "This article relates to Venezuela – share your view?"). The toast offers to give feedback on the article and to start an outstanding survey, if one exists.
+- **Survey input:** the predictive questions take a required 1–5 rating plus an optional free-text comment.
+- **Highlight to comment:** on matched news domains, selecting article text shows a floating "Comment to ACAPS" button next to the selection. The selected text and the comment are added to the unstructured feedback for that article.
