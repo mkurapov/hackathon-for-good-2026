@@ -127,6 +127,7 @@ Notification
 - Awaiting Response filterred should be by default brought to the top
 - Separate internal alias from cross-community identifier
 - All Risk codes for each expert should be viewable by clicking on their profiles; analysts should also be able to view their areas of expertise by clicking on their profile. Sample areas of expertise you can populate with: "Economy", "Displacement", "Humanitarian Aid", "Women's Rights", "Conflict"
+- Add copy icon next to expert invite code and change the three dots on the side so they trigger an options panel or remove them
 
 ## Remove Pending Approvals tab 
 - For now we don't need to have this
@@ -141,7 +142,7 @@ Notification
 
 ## Notifications
 - Should be renamed to "Send mass notification" 
-- Add button which allows analyst to send notifications
+- Add window which shows when the risk level of a tracked issue has increased to this view so that the panel's use is obvious
 
 # Feedback on first draft/general design principles
 1. Don't use Title + Subtitle and small info banner on top, it feels bloated. Stick to one title in most places and only add subtitled if needed
