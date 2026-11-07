@@ -21,7 +21,7 @@ flowchart TD
         QUESTIONS["questions.py<br/>generate_survey"]
     end
 
-    LLM["External LLM server<br/>OpenAI-compatible"]
+    LLM["LM Studio<br/>native REST API"]
     DB[("db.py<br/>SQLite")]
 
     subgraph api["API layer"]
@@ -57,9 +57,9 @@ flowchart TD
 | `data.py` | Single loader for risks: API first, CSV fills the gaps (R1043 only exists in the CSV). Drops drafts (under development) | Both sources produce the same record shape | |
 | `latest.py` | Turns a risk into a compact LLM context: 3 most recent updates, or rationale + updates if there are fewer than 3. Strips citation links | `render_context` produces the text | |
 | `questions.py` | Prompt, LLM call, JSON extraction/validation, retries. Assigns question IDs (`L1`-`L5`, `B1`-`B5`) and `survey_id`. Returns a `Survey` matching the OpenAPI schema | Token budget: 3 updates, falls back to 1 | |
-| `db.py` | SQLite storage: `groups`, `experts`, `surveys`, `responses` | Expert tokens are stored hashed | |
+| `db.py` | SQLite storage: groups, experts, surveys, responses, notes, article comments | Expert tokens are stored hashed | |
 | `daily_job.py` | Orchestrator. For each risk a group tracks: skip if the survey for the latest update exists, skip closed risks, otherwise generate and save | One failing risk does not stop the others | |
-| FastAPI app (`_file name_`) | Serves the endpoints below from the database | | |
+| `api.py` | FastAPI app; authentication, request validation, and API routes backed by SQLite | Article matching currently checks exact risk-ID/title text matches | |
 | `openapi.yaml` | API contract | Assumptions are marked in the file | |
 | `SPEC_1.md` | Team requirements | | |
 
@@ -90,8 +90,8 @@ flowchart TD
 | `GET /experts/{expert_id}/surveys/current` | Outstanding survey, or `204` |
 | `PUT /experts/{expert_id}/surveys/{survey_id}/responses` | Save answers (draft or submitted) |
 | `POST /notes` | Unstructured input |
-| `POST /articles/match` | Does an article relate to a tracked risk? |
-| `POST /articles/comments` | Comment on a matched article |
+| `POST /articles/match` | Does an article contain a tracked risk ID or title? |
+| `POST /articles/comments` | Store an expert comment for a matched risk/article |
 
 ## Design decisions
 
@@ -109,6 +109,7 @@ flowchart TD
 | `ACAPS_EMAIL`, `ACAPS_PASSWORD` | `acaps_client.py` | Registered ACAPS API account |
 | `LLM_BASE_URL`, `LLM_MODEL` | `questions.py` | LM Studio v1 API base URL (for example `http://localhost:1234/api/v1`) and model name. Calls `/chat` with `input`, `context_length`, reasoning disabled, and `temperature`. |
 | `LLM_API_KEY` | `questions.py` | Optional |
+| `ANALYST_API_KEY` | `api.py` | Required for `POST /groups`; sent as `X-Analyst-Key` |
 | `CSV_PATH` | `data.py` | Defaults to `risk-radar-export.csv` next to the script |
 | `DB_PATH` | `db.py` | Defaults to `groundtruth.db` next to the script |
 
@@ -125,7 +126,7 @@ python daily_job.py                  # every risk a registered group tracks
 python daily_job.py --force          # regenerate existing surveys
 
 # start the API
-uvicorn <module>:app                 # entry point:
+uvicorn api:app --app-dir backend --reload --env-file .env
 ```
 
 ## Open questions
