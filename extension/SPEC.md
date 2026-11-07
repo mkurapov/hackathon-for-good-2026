@@ -13,17 +13,6 @@ The typical profiles of humanitarian experts are:
 - Local NGO leaders
 - Anyone else with a strong interest in anticipatory analysis
 
-- User registration:
-1. ACAPS sends a link (random code) that is linked to an agent and within a conflict
-
-
-FRONTEND SPEC STEPS
-6. Optional: allow user to select if they would like to answer open-ended questions
-7. If above yes: ask open-ended questions and save intermediate answers even without submission
-7. Ask if they would like to update their info/someone from ACAPS to get in touch with them for further discussion
-8. Different workflow: if the expert is reading a news article/thread on twitter, etc. where the topics discussed are about the conflict they are consulting on, trigger a dialog through which they can take the survey. The backend will have an API that would match the metadata/title to the current risk and output whether an existing 
-
-
 ### User flows
 
 #### 1. Registration
@@ -38,7 +27,6 @@ A user must be able to pass along unstructured data to ACAPS (text based). It wi
 
 The example format will be akin to the text below, with five forecasting questions, and five binary questions about the verification of data.
 The questions will be asked one at a time. Each question will include an open ended text box (for optional). 
-Include a "dont know/unsure" button so people can provide.
 
 ##### Predictive, qualitatitve questions
 *(Designed for Humanitarian/Conflict Experts to assess Likelihood and Urgency based on ground truth)*
@@ -72,5 +60,7 @@ Additionally, the expert could highlight text about the article, attach a commen
 ### UI requirements
 - **Main surface:** both a toolbar popup and a Firefox sidebar. The popup is for quick actions (outstanding survey, quick unstructured feedback). The sidebar is for longer tasks (surveys, article feedback), so the expert can read sources while answering. The popup has a button to open the sidebar.
 - **Article match prompt:** when a browsed article matches one of the expert's assigned risks, show a small, dismissible in-page toast (e.g. "This article relates to Venezuela – share your view?"). The toast offers to give feedback on the article and to start an outstanding survey, if one exists.
-- **Survey input:** the predictive questions take a required 1–5 rating plus an optional free-text comment.
+- **Survey input:** predictive questions take a 1–5 rating and verification questions take Yes / No. Every question also has an optional free-text comment and a "Don't know / skip" button, inline with the 1-5 rating, so no answer is forced. Tapping a rating, Yes / No, or skip moves to the next question straight away, unless the expert has typed a comment. The survey opens straight on question 1 (context behind a small link) and submits from the last question, with no intro or closing step. Auto advance on rating clicks.
+- **Contact request:** the home toolbar popup has a clearly visible, full-width "Ask ACAPS to contact me" button at the bottom. Clicking it shows an optional one-line note ("What's it about?") and a "Request contact" button, which POSTs the request to the API. No contact details are asked for, since ACAPS already has them from the expert profile. Once sent, the button changes to "Contact requested – ACAPS will be in touch" so the expert doesn't send it twice.
+- **Registration:** opening the invite link goes straight to confirming the profile. Typing the code by hand is only needed without the link.
 - **Highlight to comment:** on matched news domains, selecting article text shows a floating "Comment to ACAPS" button next to the selection. The selected text and the comment are added to the unstructured feedback for that article.
