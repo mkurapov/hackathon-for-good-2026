@@ -4,8 +4,12 @@ First target: Firefox (since it has VPN)
 
 - Provide 3 flows:
 1. Take update survey
+Check API for existing surveys to take
+
 2. I have information to share (open ended questions)
-3. If the article in the window matches to one of the risk scores, comment on article directly
+POST API to pass in loose data.
+
+3. If the article in the window matches to one of the risk scores, comment on article directly 
 
 - User registration:
-1. ACAPS sends a link (random code) that is linked to an agent
+1. ACAPS sends a link (random code) that is linked to an agent and within a conflict
