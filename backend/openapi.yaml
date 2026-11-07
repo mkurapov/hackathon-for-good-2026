@@ -1,0 +1,609 @@
+openapi: 3.1.0
+info:
+  title: Ground Truth - Expert Loop API
+  version: 0.1.0
+  description: |
+    Backend API for a moderated expert loop around ACAPS risk analyses.
+
+    Clients: Firefox extension (primary), Telegram bot, WhatsApp bot.
+
+    **How it fits together.** A daily job (not part of this API) fetches the latest ACAPS
+    Risk Radar data per risk, builds a compact context from the 3 most recent updates,
+    asks the configured LM Studio model for 5 Likert (1-5) and 5 yes/no questions using
+    `POST /api/v1/chat` with `model`, `input`, `context_length`, `reasoning: off`,
+    `temperature`, and `max_output_tokens`, and stores one *survey* per
+    `(risk_id, based_on_update)`. This internal LM Studio call is not an endpoint of this
+    API. This API serves those surveys to experts and collects their input.
+
+    **Anonymity.** Each expert chooses their own level (`anonymity_level`) and can change it
+    at any time. Individual contributions are never attributed publicly, whatever the level.
+    The level only controls who inside the loop can see who said what.
+
+    **Assumptions to confirm (marked ASSUMPTION below):** groups are linked to a `risk_id`;
+    experts authenticate with a token issued at registration; "no survey available" is `204`.
+servers:
+  - url: http://localhost:8000
+    description: Local development
+tags:
+  - name: Registration
+  - name: Surveys
+  - name: Contributions
+
+security:
+  - expertToken: []
+
+paths:
+  /groups:
+    post:
+      tags: [Registration]
+      operationId: createGroup
+      summary: Register a group of experts and link it to the risk it tracks
+      description: |
+        ASSUMPTION: only ACAPS analysts create groups. Experts join with the returned
+        `invite_code` (see `POST /experts`). A group has around 5-10 experts.
+      security:
+        - analystKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupCreate'
+      responses:
+        '201':
+          description: Group created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /experts:
+    post:
+      tags: [Registration]
+      operationId: registerExpert
+      summary: Register an expert and map them to a group
+      description: |
+        Called with a group's invite code. Returns a token the client stores and sends as
+        `Authorization: Bearer <token>`. No real name or email is required; use
+        `display_name` for a pseudonym if wanted. Use synthetic users during the hackathon.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpertRegistration'
+      responses:
+        '201':
+          description: Expert registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExpertRegistered'
+        '404':
+          description: Invite code not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /experts/me:
+    patch:
+      tags: [Registration]
+      operationId: updateExpert
+      summary: Change the expert's own settings (anonymity level, language, channel)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpertUpdate'
+      responses:
+        '200':
+          description: Updated expert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expert'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /experts/{expert_id}/surveys/current:
+    get:
+      tags: [Surveys]
+      operationId: getCurrentSurvey
+      summary: Get the outstanding survey for this expert
+      description: |
+        Looks up the expert's group, finds the risk it tracks and returns the survey built
+        from that risk's most recent update, unless this expert has already submitted
+        answers for it. Returns `204 No Content` when there is no survey yet, or when the
+        expert has nothing outstanding. The bearer token must belong to `expert_id`.
+      parameters:
+        - $ref: '#/components/parameters/ExpertId'
+      responses:
+        '200':
+          description: Survey to answer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Survey'
+        '204':
+          description: Nothing outstanding (no survey yet, or already answered the latest update)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Expert not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /experts/{expert_id}/surveys/{survey_id}/responses:
+    put:
+      tags: [Surveys]
+      operationId: putSurveyResponses
+      summary: Save this expert's answers (draft or final)
+      description: |
+        Idempotent upsert of the expert's answers, so the client can save as the expert
+        fills in the form. Send `status: submitted` for the final save. A `null` value means
+        skipped / don't know. Questions may be left out of a draft. The bearer token must
+        belong to `expert_id`.
+      parameters:
+        - $ref: '#/components/parameters/ExpertId'
+        - $ref: '#/components/parameters/SurveyId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SurveyResponseInput'
+      responses:
+        '200':
+          description: Saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SurveyResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Survey not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: |
+            Survey is outdated (a newer update exists) or the response was already submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /notes:
+    post:
+      tags: [Contributions]
+      operationId: createNote
+      summary: Submit unstructured information (free text, optional link)
+      description: |
+        For anything the expert wants to share outside the survey: rumours, local
+        observations, links. `risk_id` defaults to the group's risk.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NoteCreate'
+      responses:
+        '201':
+          description: Note stored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /articles/match:
+    post:
+      tags: [Contributions]
+      operationId: matchArticle
+      summary: Check whether the article in the browser window relates to a tracked risk
+      description: |
+        DEVIATION FROM SPEC (was a GET): article content does not fit in a query string.
+        Returns the matching risk, if any, so the extension can offer a comment box.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArticleInput'
+      responses:
+        '200':
+          description: Match result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleMatch'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /articles/comments:
+    post:
+      tags: [Contributions]
+      operationId: commentOnArticle
+      summary: Comment directly on an article that matched a risk
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArticleCommentCreate'
+      responses:
+        '201':
+          description: Comment stored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleComment'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+components:
+  securitySchemes:
+    expertToken:
+      type: http
+      scheme: bearer
+      description: Token returned by `POST /experts`
+    analystKey:
+      type: apiKey
+      in: header
+      name: X-Analyst-Key
+      description: Shared key for ACAPS analysts (moderation and group management)
+
+  parameters:
+    ExpertId:
+      name: expert_id
+      in: path
+      required: true
+      description: The `expert_id` returned by `POST /experts`
+      schema:
+        type: string
+    SurveyId:
+      name: survey_id
+      in: path
+      required: true
+      schema:
+        type: string
+
+  responses:
+    Forbidden:
+      description: The token does not belong to the expert in the path
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Missing or invalid credentials
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ValidationError:
+      description: Request body failed validation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    Error:
+      type: object
+      required: [detail]
+      properties:
+        detail:
+          type: string
+
+    AnonymityLevel:
+      type: string
+      description: |
+        Who inside the loop may see who an expert is. Contributions are never attributed
+        publicly at any level.
+      enum: [known_to_acaps, pseudonymous_to_peers, fully_anonymous]
+
+    Channel:
+      type: string
+      enum: [extension, telegram, whatsapp]
+
+    Language:
+      type: string
+      enum: [en, fr]
+
+    GroupCreate:
+      type: object
+      required: [name, risk_id]
+      properties:
+        name:
+          type: string
+          examples: [Eastern Chad panel]
+        risk_id:
+          type: string
+          description: Risk Radar risk ID the group tracks
+          examples: [R1043]
+        country_iso3:
+          type: string
+          description: Convenience only; the risk determines the context
+          examples: [TCD]
+
+    Group:
+      allOf:
+        - $ref: '#/components/schemas/GroupCreate'
+        - type: object
+          required: [group_id, invite_code]
+          properties:
+            group_id:
+              type: string
+            invite_code:
+              type: string
+              description: Share with the experts who should join
+
+    ExpertRegistration:
+      type: object
+      required: [invite_code, anonymity_level]
+      properties:
+        invite_code:
+          type: string
+        anonymity_level:
+          $ref: '#/components/schemas/AnonymityLevel'
+        display_name:
+          type: string
+          description: Optional pseudonym shown to peers when the level allows it
+        channel:
+          $ref: '#/components/schemas/Channel'
+        language:
+          $ref: '#/components/schemas/Language'
+
+    ExpertUpdate:
+      type: object
+      minProperties: 1
+      properties:
+        anonymity_level:
+          $ref: '#/components/schemas/AnonymityLevel'
+        display_name:
+          type: string
+        channel:
+          $ref: '#/components/schemas/Channel'
+        language:
+          $ref: '#/components/schemas/Language'
+
+    Expert:
+      type: object
+      required: [expert_id, group_id, anonymity_level]
+      properties:
+        expert_id:
+          type: string
+        group_id:
+          type: string
+        anonymity_level:
+          $ref: '#/components/schemas/AnonymityLevel'
+        display_name:
+          type: [string, 'null']
+        channel:
+          $ref: '#/components/schemas/Channel'
+        language:
+          $ref: '#/components/schemas/Language'
+
+    ExpertRegistered:
+      allOf:
+        - $ref: '#/components/schemas/Expert'
+        - type: object
+          required: [token]
+          properties:
+            token:
+              type: string
+              description: Bearer token for all expert endpoints. Shown once.
+
+    LikertQuestion:
+      type: object
+      required: [id, text, dimension]
+      properties:
+        id:
+          type: string
+          examples: [L1]
+        text:
+          type: string
+        dimension:
+          type: string
+          description: Lets the client show matching scale labels (e.g. very unlikely to very likely)
+          enum: [likelihood, urgency, severity, scale, other]
+
+    BinaryQuestion:
+      type: object
+      required: [id, text]
+      properties:
+        id:
+          type: string
+          examples: [B1]
+        text:
+          type: string
+
+    Survey:
+      type: object
+      required: [survey_id, risk_id, risk_title, based_on_update, likert, binary]
+      properties:
+        survey_id:
+          type: string
+        risk_id:
+          type: string
+        risk_title:
+          type: string
+        based_on_update:
+          type: [string, 'null']
+          description: Date (dd/mm/yyyy) of the newest risk update the questions are based on
+        generated_at:
+          type: string
+          format: date-time
+        likert:
+          type: array
+          maxItems: 5
+          items:
+            $ref: '#/components/schemas/LikertQuestion'
+        binary:
+          type: array
+          maxItems: 5
+          items:
+            $ref: '#/components/schemas/BinaryQuestion'
+
+    LikertAnswer:
+      type: object
+      required: [question_id, value]
+      properties:
+        question_id:
+          type: string
+        value:
+          type: [integer, 'null']
+          minimum: 1
+          maximum: 5
+          description: 1 (low) to 5 (high); null = skipped / don't know
+
+    BinaryAnswer:
+      type: object
+      required: [question_id, value]
+      properties:
+        question_id:
+          type: string
+        value:
+          type: [boolean, 'null']
+          description: null = skipped / don't know
+
+    SurveyResponseInput:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [draft, submitted]
+        likert:
+          type: array
+          items:
+            $ref: '#/components/schemas/LikertAnswer'
+        binary:
+          type: array
+          items:
+            $ref: '#/components/schemas/BinaryAnswer'
+        comment:
+          type: string
+          description: Optional free-text remark on the survey
+
+    SurveyResponse:
+      allOf:
+        - $ref: '#/components/schemas/SurveyResponseInput'
+        - type: object
+          required: [survey_id, updated_at]
+          properties:
+            survey_id:
+              type: string
+            updated_at:
+              type: string
+              format: date-time
+
+    NoteCreate:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+          maxLength: 5000
+        url:
+          type: string
+          format: uri
+        risk_id:
+          type: string
+          description: Defaults to the expert's group risk
+
+    Note:
+      allOf:
+        - $ref: '#/components/schemas/NoteCreate'
+        - type: object
+          required: [note_id, created_at]
+          properties:
+            note_id:
+              type: string
+            created_at:
+              type: string
+              format: date-time
+
+    ArticleInput:
+      type: object
+      required: [url]
+      properties:
+        url:
+          type: string
+          format: uri
+        title:
+          type: string
+        text:
+          type: string
+          description: Article body or an excerpt, as extracted by the extension
+          maxLength: 20000
+
+    ArticleMatch:
+      type: object
+      required: [matched]
+      properties:
+        matched:
+          type: boolean
+        risk_id:
+          type: [string, 'null']
+        risk_title:
+          type: [string, 'null']
+        score:
+          type: [number, 'null']
+          minimum: 0
+          maximum: 1
+          description: Match confidence, if available
+
+    ArticleCommentCreate:
+      type: object
+      required: [url, risk_id, text]
+      properties:
+        url:
+          type: string
+          format: uri
+        risk_id:
+          type: string
+        text:
+          type: string
+          maxLength: 5000
+
+    ArticleComment:
+      allOf:
+        - $ref: '#/components/schemas/ArticleCommentCreate'
+        - type: object
+          required: [comment_id, created_at]
+          properties:
+            comment_id:
+              type: string
+            created_at:
+              type: string
+              format: date-time
