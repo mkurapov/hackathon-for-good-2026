@@ -278,9 +278,7 @@ def preview_invite(invite_code: str) -> InvitePreview:
         resolved = _resolve_invite(conn, invite_code)
         if resolved is None:
             raise HTTPException(status_code=404, detail="Invite code not found")
-        group, invite = resolved
-        if invite is not None and invite["expert_id"] is not None:
-            raise HTTPException(status_code=409, detail="Invite code was already used")
+        group, _ = resolved
         return InvitePreview(
             group_name=group["name"],
             risk_id=group["risk_id"],
@@ -302,38 +300,62 @@ h1{{color:#004b78}}code{{background:#f2f2f2;padding:2px 6px;border-radius:3px}}<
 Your invite code is <code>{safe}</code>.</p></body></html>""")
 
 
+def _existing_expert_id(conn, group: dict, invite: dict | None) -> str | None:
+    """The expert an invite code already registered, if any.
+
+    Each code belongs to one contributor: a personal code points at its expert, and a group code
+    at the first expert who joined through it (not one who joined with a personal code).
+    """
+    if invite is not None:
+        return invite["expert_id"]
+    row = conn.execute(
+        """SELECT e.expert_id FROM experts e
+           WHERE e.group_id = ? AND NOT EXISTS (SELECT 1 FROM invites i WHERE i.expert_id = e.expert_id)
+           ORDER BY e.created_at, e.rowid LIMIT 1""",
+        (group["group_id"],),
+    ).fetchone()
+    return row["expert_id"] if row else None
+
+
 @app.post("/experts", response_model=ExpertRegistered, status_code=status.HTTP_201_CREATED, tags=["Registration"])
 def register_expert(body: ExpertRegistration) -> ExpertRegistered:
+    """Register with an invite code. Reusing a code links back to the contributor who first used it
+    (with a new token, which signs out any earlier install) instead of creating a new one."""
     token = secrets.token_urlsafe(32)
-    expert_id = f"exp_{secrets.token_urlsafe(12)}"
     with db.connect() as conn:
         resolved = _resolve_invite(conn, body.invite_code)
         if resolved is None:
             raise HTTPException(status_code=404, detail="Invite code not found")
         group, invite = resolved
-        if invite is not None and invite["expert_id"] is not None:
-            raise HTTPException(status_code=409, detail="Invite code was already used")
-        conn.execute(
-            """INSERT INTO experts
-               (expert_id, group_id, token_hash, anonymity_level, display_name, channel, language,
-                contributor_type)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-            (
-                expert_id,
-                group["group_id"],
-                _token_hash(token),
-                body.anonymity_level,
-                body.display_name,
-                body.channel,
-                body.language,
-                "A" if invite is not None else "B",
-            ),
-        )
-        if invite is not None:
+        expert_id = _existing_expert_id(conn, group, invite)
+        if expert_id is not None:
             conn.execute(
-                "UPDATE invites SET expert_id = ? WHERE invite_code = ?",
-                (expert_id, invite["invite_code"]),
+                "UPDATE experts SET token_hash = ? WHERE expert_id = ?",
+                (_token_hash(token), expert_id),
             )
+        else:
+            expert_id = f"exp_{secrets.token_urlsafe(12)}"
+            conn.execute(
+                """INSERT INTO experts
+                   (expert_id, group_id, token_hash, anonymity_level, display_name, channel, language,
+                    contributor_type)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    expert_id,
+                    group["group_id"],
+                    _token_hash(token),
+                    body.anonymity_level,
+                    body.display_name,
+                    body.channel,
+                    body.language,
+                    "A" if invite is not None else "B",
+                ),
+            )
+            if invite is not None:
+                conn.execute(
+                    "UPDATE invites SET expert_id = ? WHERE invite_code = ?",
+                    (expert_id, invite["invite_code"]),
+                )
         conn.commit()
         row = conn.execute(
             """SELECT expert_id, group_id, anonymity_level, display_name, channel, language

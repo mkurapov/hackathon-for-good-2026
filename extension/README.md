@@ -10,14 +10,14 @@ Manifest V3, plain JavaScript, no build step.
 
    ```bash
    docker compose -f docker/docker-compose.yml up -d --build
-   docker compose -f docker/docker-compose.yml exec api python seed_demo.py   # prints the invite code DEMO-VEN-2026
+   docker compose -f docker/docker-compose.yml exec api python seed_demo.py   # prints the invite code DEMO1
    ```
 
    The database lives in the `groundtruth-data` volume. `docker compose -f docker/docker-compose.yml down -v` wipes it.
 
 2. Load the extension: open `about:debugging#/runtime/this-firefox` in Firefox, click **Load Temporary Add-on…** and pick `extension/manifest.json`. A welcome tab opens.
 
-3. Join: open <http://localhost:8000/join?code=DEMO-VEN-2026>, or type `DEMO-VEN-2026` in the welcome tab. Then click **This is me, continue**.
+3. Join: open <http://localhost:8000/join?code=DEMO1>, or type `DEMO1` in the welcome tab. Then click **This is me, continue**.
 
 4. Try an article: serve the test article and open it.
 

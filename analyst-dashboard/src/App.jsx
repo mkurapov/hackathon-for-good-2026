@@ -7,6 +7,7 @@ import Toasts from "./components/Toasts.jsx";
 import Overview from "./views/Overview.jsx";
 import Experts from "./views/Experts.jsx";
 import Survey from "./views/Survey.jsx";
+import SurveyAnswers from "./views/SurveyAnswers.jsx";
 import Tips from "./views/Tips.jsx";
 import Notifications from "./views/Notifications.jsx";
 import ExpertProfile from "./modals/ExpertProfile.jsx";
@@ -14,9 +15,10 @@ import AddExpert from "./modals/AddExpert.jsx";
 import InviteResult from "./modals/InviteResult.jsx";
 import ImportCsv from "./modals/ImportCsv.jsx";
 import Reply from "./modals/Reply.jsx";
+import ArticleReader from "./modals/ArticleReader.jsx";
 import { VIEWS, pathForView, viewFromPath } from "./lib/views.js";
 
-const MODALS = { profile: ExpertProfile, addExpert: AddExpert, invite: InviteResult, import: ImportCsv, reply: Reply };
+const MODALS = { profile: ExpertProfile, addExpert: AddExpert, invite: InviteResult, import: ImportCsv, reply: Reply, article: ArticleReader };
 const RISK_KEY = "analyst-dashboard.risk";
 
 function readStoredRisk() {
@@ -34,6 +36,7 @@ export default function App() {
   const [experts, setExperts] = useState([]);
   const [survey, setSurvey] = useState(null);
   const [tips, setTips] = useState([]);
+  const [articleComments, setArticleComments] = useState([]);
   const [focusTipId, setFocusTipId] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [loadError, setLoadError] = useState(null);
@@ -60,9 +63,10 @@ export default function App() {
   const loadRisks = useCallback(async () => {
     setLoadError(null);
     try {
-      const [riskList, tipList] = await Promise.all([api.risks(), api.tips()]);
+      const [riskList, tipList, commentList] = await Promise.all([api.risks(), api.tips(), api.articleComments()]);
       setRisks(riskList);
       setTips(tipList);
+      setArticleComments(commentList);
       setRiskCode((code) => (riskList.some((r) => r.code === code) ? code : riskList[0]?.code ?? null));
     } catch (error) {
       setLoadError(error.message);
@@ -93,6 +97,7 @@ export default function App() {
 
   const risk = risks?.find((item) => item.code === riskCode);
   const unreviewedCount = tips.filter((item) => item.status === "unreviewed" && item.riskCode === riskCode).length;
+  const unreviewedComments = articleComments.filter((item) => item.status === "unreviewed" && item.riskCode === riskCode).length;
 
   // Keep the view in sync with the back/forward buttons.
   useEffect(() => {
@@ -135,6 +140,12 @@ export default function App() {
     return tip;
   };
 
+  const updateArticleComment = async (id, patch) => {
+    const comment = await attempt(() => api.updateArticleComment(id, patch));
+    if (comment) setArticleComments((items) => items.map((item) => (item.id === id ? comment : item)));
+    return comment;
+  };
+
   const saveSurvey = async (questions) => {
     const saved = await attempt(() => api.saveSurvey(riskCode, questions));
     if (saved) setSurvey(saved);
@@ -145,6 +156,7 @@ export default function App() {
     if (published) {
       setSurvey(published);
       await attempt(loadExperts);
+      toast("Survey answers are now available");
       toast(`Survey published to ${experts.filter((e) => e.used).length} experts`);
     }
   };
@@ -188,7 +200,13 @@ export default function App() {
   return (
     <>
       <div className="app-shell">
-        <Sidebar view={view} goTo={goTo} unreviewedCount={unreviewedCount} mobileOpen={mobileNavOpen} />
+        <Sidebar
+          view={view}
+          goTo={goTo}
+          unreviewedCount={unreviewedCount + unreviewedComments}
+          surveyPublished={survey?.status === "Published"}
+          mobileOpen={mobileNavOpen}
+        />
         <main className="main-column">
           <Topbar
             section={activeView.title || activeView.label}
@@ -206,11 +224,14 @@ export default function App() {
             {view === "survey" && (
               <Survey {...shared} survey={survey} onSave={saveSurvey} onPublish={publishSurvey} />
             )}
+            {view === "answers" && <SurveyAnswers {...shared} survey={survey} />}
             {view === "feedback" && (
               <Tips
                 {...shared}
                 submissions={tips}
                 updateSubmission={updateTip}
+                articleComments={articleComments}
+                updateArticleComment={updateArticleComment}
                 unreviewedCount={unreviewedCount}
                 focusTipId={focusTipId}
                 onFocusDone={() => setFocusTipId(null)}
@@ -230,6 +251,7 @@ export default function App() {
             {...shared}
             experts={experts}
             submissions={tips}
+            articleComments={articleComments}
             reloadExperts={() => attempt(loadExperts)}
             replyTip={replyTip}
             onClose={closeModal}

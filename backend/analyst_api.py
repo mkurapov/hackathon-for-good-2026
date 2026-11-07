@@ -153,6 +153,43 @@ class TipReply(BaseModel):
     notes: str = Field(min_length=1, max_length=5000)
 
 
+class ArticleCommentItem(BaseModel):
+    comment_id: str
+    expert_id: str
+    alias: str
+    contributor_type: ContributorType
+    risk_id: str
+    url: str
+    text: str
+    stance: Literal["agree", "disagree"] | None
+    quote: str | None
+    status: Literal["unreviewed", "reviewed"]
+    created_at: datetime
+
+
+class ArticleCommentUpdate(BaseModel):
+    status: Literal["unreviewed", "reviewed"]
+
+
+class QuestionAnswers(BaseModel):
+    id: str
+    kind: Literal["likert", "binary"]
+    text: str
+    answered: int = Field(description="Submitted responses that gave a value for this question")
+    mean: float | None = Field(description="Likert: average score (1-5). Binary: share answering yes (0-1).")
+    std_dev: float | None = Field(description="Likert only: sample standard deviation")
+    comments: list[str]
+
+
+class SurveyAnswers(BaseModel):
+    survey_id: str
+    risk_id: str
+    published_at: datetime | None
+    response_count: int
+    panel_size: int = Field(description="Registered experts on this risk, for the response rate")
+    questions: list[QuestionAnswers]
+
+
 # ---------- helpers ----------
 def _now() -> datetime:
     return datetime.now(timezone.utc)
@@ -187,11 +224,11 @@ def _require_risk(conn, risk_id: str) -> None:
 
 
 def _new_invite_code(conn) -> str:
-    alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+    # Demo-friendly codes for now: DEMO1, DEMO2, ... (first number not already used).
+    n = 1
     while True:
-        code = "AC-" + "".join(secrets.choice(alphabet) for _ in range(4)) + "-" + "".join(
-            secrets.choice(alphabet) for _ in range(2)
-        )
+        code = f"DEMO{n}"
+        n += 1
         taken = conn.execute(
             "SELECT 1 FROM invites WHERE invite_code = ? UNION SELECT 1 FROM groups WHERE invite_code = ?",
             (code, code),
@@ -285,6 +322,34 @@ TIP_SELECT = """SELECT n.*, e.display_name, e.contributor_type, i.display_name A
                 FROM notes n
                 JOIN experts e ON e.expert_id = n.expert_id
                 LEFT JOIN invites i ON i.expert_id = e.expert_id"""
+
+COMMENT_SELECT = """SELECT c.*, e.display_name, e.contributor_type, i.display_name AS invite_name
+                    FROM article_comments c
+                    JOIN experts e ON e.expert_id = c.expert_id
+                    LEFT JOIN invites i ON i.expert_id = e.expert_id"""
+
+
+def _article_comment(row) -> ArticleCommentItem:
+    return ArticleCommentItem(
+        comment_id=row["comment_id"],
+        expert_id=row["expert_id"],
+        alias=_alias(row, row["invite_name"]),
+        contributor_type=row["contributor_type"],
+        risk_id=row["risk_id"],
+        url=row["url"],
+        text=row["text"],
+        stance=row["stance"],
+        quote=row["quote"],
+        status=row["status"],
+        created_at=_ts(row["created_at"]),
+    )
+
+
+def _panel_size(conn, risk_id: str) -> int:
+    return conn.execute(
+        "SELECT COUNT(*) AS n FROM experts e JOIN groups g ON g.group_id = e.group_id WHERE g.risk_id = ?",
+        (risk_id,),
+    ).fetchone()["n"]
 
 
 # ---------- risks ----------
@@ -503,6 +568,54 @@ def publish_survey(risk_id: str) -> AnalystSurvey:
         return _survey_response(conn, _latest_survey(conn, risk_id))
 
 
+@router.get("/risks/{risk_id}/survey/answers", response_model=SurveyAnswers)
+def survey_answers(risk_id: str) -> SurveyAnswers:
+    """Per-question statistics over the submitted responses to the latest published survey."""
+    with db.connect() as conn:
+        survey = _latest_survey(conn, risk_id, published_only=True)
+        if survey is None:
+            raise HTTPException(status_code=404, detail="No survey has been published for this risk yet")
+        questions = db.survey_questions(conn, survey["survey_id"])
+        responses = [
+            json.loads(row["payload"])
+            for row in conn.execute(
+                "SELECT payload FROM responses WHERE survey_id = ? AND status = 'submitted'",
+                (survey["survey_id"],),
+            )
+        ]
+        panel_size = _panel_size(conn, risk_id)
+
+    result = []
+    for kind in ("likert", "binary"):
+        for q in questions[kind]:
+            answers = [a for r in responses for a in r.get(kind, []) if a.get("question_id") == q["id"]]
+            values = [float(a["value"]) for a in answers if a.get("value") is not None]
+            mean = sum(values) / len(values) if values else None
+            std_dev = None
+            if kind == "likert" and values:
+                variance = sum((v - mean) ** 2 for v in values) / (len(values) - 1) if len(values) > 1 else 0.0
+                std_dev = variance**0.5
+            result.append(
+                QuestionAnswers(
+                    id=q["id"],
+                    kind=kind,
+                    text=q["text"],
+                    answered=len(values),
+                    mean=mean,
+                    std_dev=std_dev,
+                    comments=[a["comment"].strip() for a in answers if (a.get("comment") or "").strip()],
+                )
+            )
+    return SurveyAnswers(
+        survey_id=survey["survey_id"],
+        risk_id=risk_id,
+        published_at=_ts(survey["published_at"]),
+        response_count=len(responses),
+        panel_size=panel_size,
+        questions=result,
+    )
+
+
 # ---------- mass notifications (mock delivery) ----------
 @router.get("/risks/{risk_id}/notifications", response_model=list[Notification])
 def list_notifications(risk_id: str) -> list[Notification]:
@@ -598,3 +711,22 @@ def reply_to_tip(tip_id: str, body: TipReply) -> Tip:
         row = conn.execute(f"{TIP_SELECT} WHERE n.note_id = ?", (tip_id,)).fetchone()
     log.info("mock reply sent for tip %s", tip_id)
     return _tip(row)
+
+
+# ---------- article commentary ----------
+@router.get("/article-comments", response_model=list[ArticleCommentItem])
+def list_article_comments() -> list[ArticleCommentItem]:
+    with db.connect() as conn:
+        rows = conn.execute(f"{COMMENT_SELECT} ORDER BY c.created_at DESC LIMIT 500").fetchall()
+    return [_article_comment(row) for row in rows]
+
+
+@router.patch("/article-comments/{comment_id}", response_model=ArticleCommentItem)
+def update_article_comment(comment_id: str, body: ArticleCommentUpdate) -> ArticleCommentItem:
+    with db.connect() as conn:
+        conn.execute("UPDATE article_comments SET status = ? WHERE comment_id = ?", (body.status, comment_id))
+        conn.commit()
+        row = conn.execute(f"{COMMENT_SELECT} WHERE c.comment_id = ?", (comment_id,)).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    return _article_comment(row)

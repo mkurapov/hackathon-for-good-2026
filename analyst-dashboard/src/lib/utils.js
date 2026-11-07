@@ -59,3 +59,23 @@ export function timeAgo(value, { withTime = false } = {}) {
 }
 
 export const formatDateTime = (value) => (value ? dateTimeFormat.format(new Date(value)) : "");
+
+// A readable name for an article we only know by URL: its last path segment, else the host.
+export function articleLabel(url) {
+  try {
+    const { hostname, pathname } = new URL(url);
+    const slug = decodeURIComponent(pathname.split("/").filter(Boolean).pop() || "").replace(/\.[a-z0-9]+$/i, "");
+    const words = slug.replace(/[-_]+/g, " ").trim();
+    return words ? words[0].toUpperCase() + words.slice(1) : hostname;
+  } catch {
+    return url;
+  }
+}
+
+export const hostnameOf = (url) => {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return url;
+  }
+};

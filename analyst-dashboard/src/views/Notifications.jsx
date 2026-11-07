@@ -7,6 +7,22 @@ const RECIPIENTS = [
   { value: "B", label: "Informal experts" },
 ];
 
+// How the risk moved since the previous update, read from ACAPS' free-text trend.
+function riskDirection(trend = "") {
+  const value = trend.toLowerCase();
+  if (/deteriorat|worsen|increas|escalat/.test(value)) return "increased";
+  if (/improv|decreas|reduc/.test(value)) return "decreased";
+  if (/stable|unchanged/.test(value)) return "unchanged";
+  return "unknown";
+}
+
+const DIRECTION = {
+  increased: { icon: "↑", label: "Increased" },
+  decreased: { icon: "↓", label: "Decreased" },
+  unchanged: { icon: "→", label: "Unchanged" },
+  unknown: { icon: "?", label: "Not recorded" },
+};
+
 export default function Notifications({ risk, currentExperts, notifications, onQueue, toast }) {
   const [recipientType, setRecipientType] = useState("all");
   const [subject, setSubject] = useState("");
@@ -15,7 +31,7 @@ export default function Notifications({ risk, currentExperts, notifications, onQ
   const [sending, setSending] = useState(false);
   // Only registered experts can receive notifications; unused invites are not counted.
   const countFor = (type) => currentExperts.filter((e) => e.used && (type === "all" || e.type === type)).length;
-  const deteriorating = (risk.trend || "").toLowerCase().includes("deteriorat");
+  const direction = riskDirection(risk.trend || "");
 
   const submit = async (event) => {
     event.preventDefault();
@@ -56,20 +72,21 @@ export default function Notifications({ risk, currentExperts, notifications, onQ
           <button className="btn primary-action send-button" type="submit" disabled={sending}><span className="button-icon">↗</span> Queue notification</button>
         </form>
         <aside className="notification-aside">
-          <div className="risk-alert">
-            <span className="risk-alert-icon">↑</span>
+          <div className="risk-alert" data-direction={direction}>
+            <span className="risk-alert-icon">{DIRECTION[direction].icon}</span>
             <div>
-              <span className="priority-kicker">{deteriorating ? "RISK TREND DETERIORATED" : "CURRENT RISK PROFILE"}</span>
+              <span className="priority-kicker">{direction === "unknown" ? "RISK DIRECTION NOT RECORDED" : `RISK ${direction.toUpperCase()}`}</span>
               <h2>{risk.title}</h2>
-              {(risk.level || risk.trend) && (
-                <p>{risk.level && <strong>Risk level {risk.level}</strong>}{risk.trend && <span>Trend: {risk.trend}</span>}</p>
-              )}
+              <p>
+                {risk.level && <strong>Current level: {risk.level}</strong>}
+                <span>Compared with previous update: {DIRECTION[direction].label}</span>
+              </p>
             </div>
           </div>
           <div className="delivery-note">
             <span className="delivery-icon">↗</span>
             <h2>Manual by design</h2>
-            <p>Send a timely update to selected experts when an issue escalates. Delivery is simulated in this prototype.</p>
+            <p>Compose a manual update for selected experts based on the latest risk assessment. Delivery is simulated in this prototype.</p>
           </div>
           <div className="history-block">
             <div className="block-heading"><div><p className="eyebrow">RECENT ACTIVITY</p><h2>Queued notifications</h2></div></div>

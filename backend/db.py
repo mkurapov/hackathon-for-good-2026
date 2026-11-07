@@ -123,7 +123,8 @@ CREATE TABLE IF NOT EXISTS article_comments (
     text        TEXT NOT NULL,
     stance      TEXT,                        -- agree | disagree | NULL
     quote       TEXT,                        -- highlighted passage, if the comment is about one
-    created_at  TEXT NOT NULL
+    created_at  TEXT NOT NULL,
+    status      TEXT NOT NULL DEFAULT 'unreviewed'  -- analyst triage
 );
 
 CREATE TABLE IF NOT EXISTS contact_requests (
@@ -137,7 +138,7 @@ CREATE TABLE IF NOT EXISTS contact_requests (
 # Columns added after the first release. CREATE TABLE IF NOT EXISTS does not add them to
 # databases that already exist, so connect() adds any that are missing.
 ADDED_COLUMNS = {
-    "article_comments": {"stance": "TEXT", "quote": "TEXT"},
+    "article_comments": {"stance": "TEXT", "quote": "TEXT", "status": "TEXT NOT NULL DEFAULT 'unreviewed'"},
     "experts": {"contributor_type": "TEXT NOT NULL DEFAULT 'B'"},
     "surveys": {"status": "TEXT NOT NULL DEFAULT 'draft'", "published_at": "TEXT"},
     "notes": {

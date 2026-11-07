@@ -2,6 +2,7 @@ export const VIEWS = [
   { id: "overview", label: "Overview", icon: "⌂" },
   { id: "experts", label: "Expert panel", icon: "◎" },
   { id: "survey", label: "New survey", icon: "▤", title: "Survey review" },
+  { id: "answers", label: "Survey answers", icon: "◫" },
   { id: "feedback", label: "Tips inbox", icon: "▧" },
   { id: "notifications", label: "Send mass notification", icon: "↗" },
 ];

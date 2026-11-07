@@ -5,9 +5,10 @@
 # newest update, so the daily job sees this survey as already generated. `daily_job.py --force`
 # replaces these hand-written questions with LLM ones, as long as no expert has answered yet.
 #
-#   python seed_demo.py            -> prints the invite code and invite link
+#   python seed_demo.py            -> leaves the survey as a draft (publish it from the analyst dashboard)
+#                                     and prints the invite code and invite link
 #   python seed_demo.py --reset    -> deletes the demo group's experts and answers first
-#   python seed_demo.py --draft    -> leaves the survey as a draft, to publish from the analyst dashboard
+#   python seed_demo.py --publish  -> publishes the survey so experts see it straight away
 import argparse
 from datetime import datetime, timezone
 
@@ -16,7 +17,7 @@ from daily_job import RISK_ID
 from questions import BinaryQuestion, LikertQuestion, Survey, make_survey_id
 
 GROUP_ID = "grp_demo_venezuela"
-INVITE_CODE = "DEMO-VEN-2026"
+INVITE_CODE = "DEMO1"
 # Copied from the ACAPS API for R1011, so this works offline. Running the daily job overwrites
 # the risk details with live data.
 RISK_TITLE = "US military build-up in the Caribbean triggers internal destabilisation in Venezuela and heightens humanitarian needs"
@@ -47,7 +48,7 @@ BINARY = [
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--reset", action="store_true", help="remove demo experts and their answers first")
-    parser.add_argument("--draft", action="store_true", help="do not publish the survey (publish it from the dashboard)")
+    parser.add_argument("--publish", action="store_true", help="publish the survey (by default it stays a draft)")
     args = parser.parse_args()
 
     survey = Survey(
@@ -71,14 +72,14 @@ def main() -> None:
         if conn.execute("SELECT 1 FROM groups WHERE group_id = ?", (GROUP_ID,)).fetchone() is None:
             db.add_group(conn, GROUP_ID, "Venezuela expert panel (demo)", RISK_ID, INVITE_CODE, "VEN")
         else:  # databases seeded before the demo used R1011 point the group at the old risk
-            conn.execute("UPDATE groups SET risk_id = ? WHERE group_id = ?", (RISK_ID, GROUP_ID))
+            conn.execute("UPDATE groups SET risk_id = ?, invite_code = ? WHERE group_id = ?", (RISK_ID, INVITE_CODE, GROUP_ID))
             conn.execute("UPDATE invites SET risk_id = ? WHERE group_id = ?", (RISK_ID, GROUP_ID))
         # keep live details from the daily job if it already ran
         if conn.execute("SELECT 1 FROM risks WHERE risk_id = ?", (RISK_ID,)).fetchone() is None:
             db.upsert_risk(conn, RISK_ID, RISK_TITLE, ["Venezuela"], RISK_LEVEL, RISK_TREND, SUMMARY)
         if not db.survey_exists(conn, survey.survey_id):
             db.save_survey(conn, survey)
-        status = "draft" if args.draft else "published"
+        status = "published" if args.publish else "draft"
         conn.execute(
             """UPDATE surveys SET status = ?, published_at = CASE WHEN ? = 'published' THEN ? END
                WHERE survey_id = ?""",

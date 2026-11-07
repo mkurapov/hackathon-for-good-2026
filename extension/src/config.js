@@ -7,7 +7,7 @@ export const DEFAULT_ANONYMITY = 'known_to_acaps';
 
 // Code shown in the activation box when the expert has not opened an invite link. Set to '' for
 // a real release; it is the demo code from backend/seed_demo.py.
-export const PREFILL_INVITE_CODE = 'DEMO-VEN-2026';
+export const PREFILL_INVITE_CODE = 'DEMO1';
 
 // How often the background checks for a new survey.
 export const REFRESH_MINUTES = 60;

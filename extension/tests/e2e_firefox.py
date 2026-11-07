@@ -2,7 +2,7 @@
 
 Needs Firefox and: pip install selenium. Start the API and the test article first:
 
-    cd backend && DB_PATH=/tmp/acaps-e2e.db python seed_demo.py --reset
+    cd backend && DB_PATH=/tmp/acaps-e2e.db python seed_demo.py --reset --publish
     DB_PATH=/tmp/acaps-e2e.db uvicorn api:app --port 8000
     python3 -m http.server 8766 --directory extension/dev
 
@@ -88,12 +88,12 @@ try:
             box = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "[data-code]")))
             wait.until(lambda _: box.get_attribute("value"))
             enabled = d.find_element(By.CSS_SELECTOR, "[data-activate]").is_enabled()
-            check("activation code is prefilled", box.get_attribute("value") == "DEMO-VEN-2026" and enabled, box.get_attribute("value"))
+            check("activation code is prefilled", box.get_attribute("value") == "DEMO1" and enabled, box.get_attribute("value"))
             shot("0-prefilled")
             break
 
     # ---------- 1. Registration from the invite link ----------
-    new_tab("http://localhost:8000/join?code=DEMO-VEN-2026")
+    new_tab("http://localhost:8000/join?code=DEMO1")
     join_handle = d.current_window_handle
     def find_onboarding(drv):
         for h in drv.window_handles:

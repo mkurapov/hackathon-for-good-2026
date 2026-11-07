@@ -1,6 +1,6 @@
 import { VIEWS } from "../lib/views.js";
 
-export default function Sidebar({ view, goTo, unreviewedCount, mobileOpen }) {
+export default function Sidebar({ view, goTo, unreviewedCount, surveyPublished, mobileOpen }) {
   return (
     <aside className={`sidebar-nav${mobileOpen ? " mobile-open" : ""}`}>
       <a className="brand" href="/" onClick={(event) => { event.preventDefault(); goTo("overview"); }} aria-label="ACAPS analyst workspace home">
@@ -11,7 +11,13 @@ export default function Sidebar({ view, goTo, unreviewedCount, mobileOpen }) {
       <div className="workspace-label">WORKSPACE</div>
       <nav className="main-nav" aria-label="Main navigation">
         {VIEWS.map((item) => (
-          <button key={item.id} className={`nav-item${view === item.id ? " active" : ""}`} onClick={() => goTo(item.id)}>
+          <button
+            key={item.id}
+            className={`nav-item${item.id === "answers" ? " answers-nav" : ""}${view === item.id ? " active" : ""}`}
+            disabled={item.id === "answers" && !surveyPublished}
+            title={item.id === "answers" ? (surveyPublished ? "View survey response analytics" : "Available after survey publication") : undefined}
+            onClick={() => goTo(item.id)}
+          >
             <span className="nav-icon">{item.icon}</span>
             {item.label}
             {item.id === "feedback" && <span className="nav-count alert">{unreviewedCount}</span>}

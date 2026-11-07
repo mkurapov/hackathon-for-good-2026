@@ -90,6 +90,35 @@ export const toTip = (t) => ({
   reply: t.reply_notes,
 });
 
+export const toArticleComment = (c) => ({
+  id: c.comment_id,
+  handle: c.alias,
+  type: c.contributor_type,
+  createdAt: c.created_at,
+  riskCode: c.risk_id,
+  url: c.url,
+  comment: c.text,
+  stance: c.stance,
+  quote: c.quote,
+  status: c.status,
+});
+
+export const toSurveyAnswers = (a) => ({
+  surveyId: a.survey_id,
+  publishedAt: a.published_at,
+  responseCount: a.response_count,
+  panelSize: a.panel_size,
+  questions: a.questions.map((q) => ({
+    id: q.id,
+    kind: KIND[q.kind],
+    text: q.text,
+    answered: q.answered,
+    mean: q.mean,
+    stdDev: q.std_dev,
+    comments: q.comments,
+  })),
+});
+
 export const toNotification = (n) => ({
   id: n.notification_id,
   subject: n.subject,
@@ -118,6 +147,7 @@ export const api = {
   saveSurvey: async (code, questions) =>
     toSurvey(await request("PUT", `/analyst/risks/${enc(code)}/survey`, { questions: questions.map(fromQuestion) })),
   publishSurvey: async (code) => toSurvey(await request("POST", `/analyst/risks/${enc(code)}/survey/publish`)),
+  surveyAnswers: async (code) => toSurveyAnswers(await request("GET", `/analyst/risks/${enc(code)}/survey/answers`)),
 
   notifications: async (code) =>
     (await request("GET", `/analyst/risks/${enc(code)}/notifications`)).map(toNotification),
@@ -127,4 +157,8 @@ export const api = {
   tips: async () => (await request("GET", "/analyst/tips")).map(toTip),
   updateTip: async (id, patch) => toTip(await request("PATCH", `/analyst/tips/${enc(id)}`, patch)),
   replyTip: async (id, notes) => toTip(await request("POST", `/analyst/tips/${enc(id)}/reply`, { notes })),
+
+  articleComments: async () => (await request("GET", "/analyst/article-comments")).map(toArticleComment),
+  updateArticleComment: async (id, patch) =>
+    toArticleComment(await request("PATCH", `/analyst/article-comments/${enc(id)}`, patch)),
 };
