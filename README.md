@@ -47,9 +47,9 @@ Analysts invite experts and manage the panel in the dashboard, review and edit d
 
 <table>
   <tr>
-    <td align="center"><img src="images/survey_answers_dashboard.jpeg" alt="Survey answers dashboard" height="120"></td>
-    <td align="center"><img src="images/tips_inbox_dashboard.jpeg" alt="Open text tips" height="120"></td>
-    <td align="center"><img src="images/article_commentary_dashboard.jpeg" alt="Article comments" height="120"></td>
+    <td align="center"><img src="images/survey_answers_dashboard.jpeg" alt="Survey answers dashboard" height="160"></td>
+    <td align="center"><img src="images/tips_inbox_dashboard.jpeg" alt="Open text tips" height="160"></td>
+    <td align="center"><img src="images/article_commentary_dashboard.jpeg" alt="Article comments" height="160"></td>
   </tr>
   <tr>
     <td align="center">Survey answers</td>
