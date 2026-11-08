@@ -41,7 +41,8 @@ button { font-family: inherit; }
 .ext-foot.block { display: block; }
 
 /* Popup: fixed width. Sidebar and full pages: fill the space. */
-.popup { width: 360px; }
+/* zoom scales all popup text (and spacing) up without touching the sidebar or frames. */
+.popup { width: 360px; zoom: 1.15; }
 .panel { height: 100vh; display: flex; flex-direction: column; }
 .panel > .ext-body { flex: 1; overflow-y: auto; }
 

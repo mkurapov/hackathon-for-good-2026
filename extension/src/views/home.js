@@ -53,7 +53,7 @@ export function renderHome(root, state, opts) {
       </div>
       <p class="error" data-note-error hidden></p>`;
 
-  root.innerHTML = head(profile?.group_name || 'Expert network', headRight) + `
+  root.innerHTML = head('Expert network', headRight) + `
     <div class="ext-body">
       ${offline ? '<div class="notice">Cannot reach ACAPS right now. Showing saved information.</div>' : ''}
       ${surveyCard}

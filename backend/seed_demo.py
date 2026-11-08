@@ -17,6 +17,7 @@ from daily_job import RISK_ID
 from questions import BinaryQuestion, LikertQuestion, Survey, make_survey_id
 
 GROUP_ID = "grp_demo_venezuela"
+GROUP_NAME = "Expert panel (demo)"
 INVITE_CODE = "DEMO1"
 # Copied from the ACAPS API for R1011, so this works offline. Running the daily job overwrites
 # the risk details with live data.
@@ -70,9 +71,9 @@ def main() -> None:
             conn.execute("DELETE FROM experts WHERE group_id = ?", (GROUP_ID,))
             conn.commit()
         if conn.execute("SELECT 1 FROM groups WHERE group_id = ?", (GROUP_ID,)).fetchone() is None:
-            db.add_group(conn, GROUP_ID, "Venezuela expert panel (demo)", RISK_ID, INVITE_CODE, "VEN")
+            db.add_group(conn, GROUP_ID, GROUP_NAME, RISK_ID, INVITE_CODE, "VEN")
         else:  # databases seeded before the demo used R1011 point the group at the old risk
-            conn.execute("UPDATE groups SET risk_id = ?, invite_code = ? WHERE group_id = ?", (RISK_ID, INVITE_CODE, GROUP_ID))
+            conn.execute("UPDATE groups SET name = ?, risk_id = ?, invite_code = ? WHERE group_id = ?", (GROUP_NAME, RISK_ID, INVITE_CODE, GROUP_ID))
             conn.execute("UPDATE invites SET risk_id = ? WHERE group_id = ?", (RISK_ID, GROUP_ID))
         # keep live details from the daily job if it already ran
         if conn.execute("SELECT 1 FROM risks WHERE risk_id = ?", (RISK_ID,)).fetchone() is None:

@@ -104,7 +104,7 @@ try:
     onboarding = wait.until(find_onboarding)
     d.switch_to.window(onboarding)
     wait.until(EC.text_to_be_present_in_element((By.CSS_SELECTOR, "h3"), "Confirm your invite"))
-    check("invite link opens confirm screen", "Venezuela expert panel" in d.page_source)
+    check("invite link opens confirm screen", "Expert panel (demo)" in d.page_source)
     shot("1-confirm")
     d.find_element(By.CSS_SELECTOR, "[data-yes]").click()
     wait.until(EC.text_to_be_present_in_element((By.CSS_SELECTOR, "h3"), "all set"))
