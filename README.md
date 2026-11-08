@@ -45,6 +45,19 @@ The Firefox extension gives experts three complementary ways to share what they 
 
 Analysts invite experts and manage the panel in the dashboard, review and edit drafted surveys before publishing, and triage incoming tips and article comments. Experts choose their anonymity settings when they join. Analysts can also queue notifications for a selected risk and audience.
 
+<table>
+  <tr>
+    <td align="center"><img src="images/survey_answers_dashboard.jpeg" alt="Survey answers dashboard" height="120"></td>
+    <td align="center"><img src="images/tips_inbox_dashboard.jpeg" alt="Open text tips" height="120"></td>
+    <td align="center"><img src="images/article_commentary_dashboard.jpeg" alt="Article comments" height="120"></td>
+  </tr>
+  <tr>
+    <td align="center">Survey answers</td>
+    <td align="center">Open text tips</td>
+    <td align="center">Article comments</td>
+  </tr>
+</table>
+
 Survey questions are stored both as a complete survey payload and as individual `survey_questions` rows, which can be queried by `risk_id` and `based_on_update`. Expert-facing routes are documented in [`backend/openapi.yaml`](backend/openapi.yaml); implementation and data-flow details are in [`backend/ARCHITECTURE.md`](backend/ARCHITECTURE.md).
 
 ## Run the demo locally
