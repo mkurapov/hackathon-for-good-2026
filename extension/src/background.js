@@ -268,18 +268,15 @@ async function requestContact({ note }) {
 const normaliseUrl = (url) => url.split("#")[0];
 
 // For now any article on these sites counts as a match, tied to the expert's own risk.
-// localhost stays in for the dev article page (dev/article.html).
 const NEWS_SITES = [
   "bbc.com",
   "aljazeera.com",
   "theconversation.com",
   "dw.com",
   "nytimes.com",
-  "localhost",
-  "127.0.0.1",
 ];
 const isNewsSite = (url) => {
-  const host = new URL(url).hostname;
+  const host = new URL(url).host;
   return NEWS_SITES.some((site) => host === site || host.endsWith("." + site));
 };
 

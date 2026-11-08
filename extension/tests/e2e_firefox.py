@@ -12,6 +12,7 @@ Screenshots go to a temporary folder printed at the end.
 """
 import json
 import os
+import shutil
 import sqlite3
 import sys
 import tempfile
@@ -25,7 +26,7 @@ from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-EXT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SRC = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB = os.environ["DB_PATH"]
 OUT = tempfile.mkdtemp(prefix="acaps-e2e-")
 FIREFOX = os.environ.get("FIREFOX_BIN", "/Applications/Firefox.app/Contents/MacOS/firefox")
@@ -34,6 +35,37 @@ UUID = "0f6c1d2e-3a4b-4c5d-8e9f-0a1b2c3d4e5f"  # fixed, so the test can open moz
 BASE = f"moz-extension://{UUID}/"
 HEADLESS = "--headed" not in sys.argv
 
+
+def test_build():
+    """Copy the extension and allow the dev article page (localhost:8766) as a news site.
+
+    The shipped extension doesn't treat localhost as a news site, so the test patches a copy.
+    Firefox match patterns can't hold a port, so the manifest allows any localhost page
+    (except /join, which belongs to the invite script) and background.js limits it to 8766.
+    """
+    out = os.path.join(tempfile.mkdtemp(prefix="acaps-e2e-ext-"), "extension")
+    shutil.copytree(SRC, out, ignore=shutil.ignore_patterns("tests", "dev"))
+
+    manifest_path = os.path.join(out, "manifest.json")
+    with open(manifest_path) as f:
+        manifest = json.load(f)
+    article = next(cs for cs in manifest["content_scripts"] if "src/content/article.js" in cs["js"])
+    article["matches"].append("http://localhost/*")
+    article.setdefault("exclude_matches", []).append("http://localhost/join*")
+    with open(manifest_path, "w") as f:
+        json.dump(manifest, f, indent=2)
+
+    bg_path = os.path.join(out, "src", "background.js")
+    with open(bg_path) as f:
+        bg = f.read()
+    marker = "const NEWS_SITES = ["
+    assert marker in bg, "NEWS_SITES not found in background.js"
+    with open(bg_path, "w") as f:
+        f.write(bg.replace(marker, marker + '\n  "localhost:8766",', 1))
+    return out
+
+
+EXT = test_build()
 results = []
 
 

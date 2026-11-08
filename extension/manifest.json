@@ -61,13 +61,7 @@
         "*://*.aljazeera.com/*",
         "*://*.theconversation.com/*",
         "*://*.dw.com/*",
-        "*://*.nytimes.com/*",
-        "http://localhost/*",
-        "http://127.0.0.1/*"
-      ],
-      "exclude_matches": [
-        "http://localhost/join*",
-        "http://127.0.0.1/join*"
+        "*://*.nytimes.com/*"
       ],
       "js": [
         "src/content/article.js"
