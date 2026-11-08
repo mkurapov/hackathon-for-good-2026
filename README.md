@@ -40,8 +40,41 @@ flowchart LR
 The Firefox extension gives experts three complementary ways to share what they know:
 
 1. **Recurring surveys:** When new information is published for an ACAPS risk, the backend prepares an updated set of short yes/no and 1–5 scale questions based on the latest assessment. Analysts review, edit and publish each survey, making sure that every interaction with experts has a human touch, and that analysts stay in control of the feedback loop. Experts can answer questions one at a time, skip any they cannot answer, and add optional comments.
+
+<table>
+  <tr>
+    <td align="center"><img src="images/binary_survey_extension.jpeg" alt="Binary question in survey" height="300"></td>
+    <td align="center"><img src="images/likert_survery_extension.jpeg" alt="Likert scale question in survey" height="300"></td>
+  </tr>
+  <tr>
+    <td align="center">Binary survey question</td>
+    <td align="center">Likert scale survey question</td>
+  </tr>
+</table>
+
 2. **Open text tips:** A free-text box lets experts send any relevant information they have, even when it does not fit a survey question or relate to a specific article.
+
+<table>
+  <tr>
+    <td align="center"><img src="images/free_text_tips_extension.jpeg" alt="Free text field to send tips" height="200"></td>
+  </tr>
+  <tr>
+    <td align="center">Free text tip</td>
+  </tr>
+</table>
+
 3. **Contextual article comments:** When an article matches a risk the expert follows, they can respond to the article or highlight a passage and comment on it. The submission is saved with the article link and highlighted context so analysts can understand what the expert is responding to.
+
+<table>
+  <tr>
+    <td align="center"><img src="images/general_article_extension.jpeg" alt="General article submission" height="200"></td>
+    <td align="center"><img src="images/line_comment_extension.jpeg" alt="LComment on a specific article line" height="200"></td>
+  </tr>
+  <tr>
+    <td align="center">General article feedback</td>
+    <td align="center">Line-specific comment</td>
+  </tr>
+</table>
 
 Analysts invite experts and manage the panel in the dashboard, review and edit drafted surveys before publishing, and triage incoming tips and article comments. Experts choose their anonymity settings when they join. Analysts can also queue notifications for a selected risk and audience.
 
