@@ -198,8 +198,9 @@ def _expert_for_path(expert_id: str, expert: dict) -> None:
 def _resolve_invite(conn, invite_code: str) -> tuple[dict, dict | None] | None:
     """Find the group behind an invite code.
 
-    Group codes are shared and register informal (type B) experts. Personal codes come from
-    the analyst dashboard, register one long-term (type A) expert, and can be used once.
+    Invite codes are meant to be personal: each one belongs to a single expert. Analysts create
+    them in the dashboard (type A experts). A group's own code, such as the demo code DEMO1, is
+    treated the same way: it stands for one expert (type B), not a shared link for many people.
     Returns (group, personal_invite) or None if the code is unknown.
     """
     group = conn.execute(
@@ -303,8 +304,9 @@ Your invite code is <code>{safe}</code>.</p></body></html>""")
 def _existing_expert_id(conn, group: dict, invite: dict | None) -> str | None:
     """The expert an invite code already registered, if any.
 
-    Each code belongs to one contributor: a personal code points at its expert, and a group code
-    at the first expert who joined through it (not one who joined with a personal code).
+    Codes are personal, so a code always maps to the same expert. Using it again (a reinstall or
+    a second device) signs that expert back in rather than creating someone new. For a group code
+    this is the first expert who joined through it (not one who joined with a personal code).
     """
     if invite is not None:
         return invite["expert_id"]
@@ -319,8 +321,8 @@ def _existing_expert_id(conn, group: dict, invite: dict | None) -> str | None:
 
 @app.post("/experts", response_model=ExpertRegistered, status_code=status.HTTP_201_CREATED, tags=["Registration"])
 def register_expert(body: ExpertRegistration) -> ExpertRegistered:
-    """Register with an invite code. Reusing a code links back to the contributor who first used it
-    (with a new token, which signs out any earlier install) instead of creating a new one."""
+    """Register with a personal invite code. Reusing a code signs its expert back in with a new token,
+    which signs out any earlier install. The settings sent here only apply to a new expert."""
     token = secrets.token_urlsafe(32)
     with db.connect() as conn:
         resolved = _resolve_invite(conn, body.invite_code)

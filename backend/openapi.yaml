@@ -5,7 +5,7 @@ info:
   description: |
     Backend API for a moderated expert loop around ACAPS risk analyses.
 
-    Clients: Firefox extension (primary), Telegram bot, WhatsApp bot.
+    Client: Firefox extension.
 
     **How it fits together.** A daily job (not part of this API) fetches the latest ACAPS
     Risk Radar data per risk, builds a compact context from the 3 most recent updates,

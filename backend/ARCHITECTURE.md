@@ -1,6 +1,6 @@
 # Ground Truth backend: architecture overview
 
-Backend for a moderated expert loop around ACAPS risk analyses (Hackathon for Good #8). Experts react to the latest risk updates through short surveys, via a Firefox extension (primary), a Telegram bot and a WhatsApp bot. Each expert controls their own anonymity level, and nothing is ever attributed publicly.
+Backend for a moderated expert loop around ACAPS risk analyses (Hackathon for Good #8). Experts react to the latest risk updates through short surveys, via a Firefox extension. Each expert controls their own anonymity level, and nothing is ever attributed publicly.
 
 Requirements: `SPEC_1.md`. API contract: `openapi.yaml`.
 
@@ -30,8 +30,6 @@ flowchart TD
 
     subgraph clients["Expert-facing clients"]
         EXT["Firefox extension"]
-        TG["Telegram bot"]
-        WA["WhatsApp bot"]
     end
 
     ACAPS --> CLIENT --> DATA
@@ -45,8 +43,6 @@ flowchart TD
 
     DB <--> FASTAPI
     EXT --> FASTAPI
-    TG --> FASTAPI
-    WA --> FASTAPI
 ```
 
 ## Files

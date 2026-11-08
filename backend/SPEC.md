@@ -1,5 +1,5 @@
 ## Context
-We are creating the backend of an app which will become (1) a browser extension for Firefox (primary goal) (2) telegram bot (3) Whatsapp bo to help an NGO which tracks conflicts and compiles risk reports/assessments stay in touch with their humanitarian experts between reports and update their info accordingly.
+We are creating the backend of an app which will become a browser extension for Firefox to help an NGO which tracks conflicts and compiles risk reports/assessments stay in touch with their humanitarian experts between reports and update their info accordingly.
 
 The experience needs to be frictionless, privacy-preserving and customisable.
 
