@@ -39,7 +39,7 @@ flowchart LR
 
 The Firefox extension gives experts three complementary ways to share what they know:
 
-1. **Recurring surveys:** When new information is published for an ACAPS risk, the backend prepares an updated set of short yes/no and 1–5 scale questions based on the latest assessment. Analysts review and publish each survey, and experts can answer questions one at a time, skip any they cannot answer, and add optional comments.
+1. **Recurring surveys:** When new information is published for an ACAPS risk, the backend prepares an updated set of short yes/no and 1–5 scale questions based on the latest assessment. Analysts review, edit and publish each survey, making sure that every interaction with experts has a human touch, and that analysts stay in control of the feedback loop. Experts can answer questions one at a time, skip any they cannot answer, and add optional comments.
 2. **Open text tips:** A free-text box lets experts send any relevant information they have, even when it does not fit a survey question or relate to a specific article.
 3. **Contextual article comments:** When an article matches a risk the expert follows, they can respond to the article or highlight a passage and comment on it. The submission is saved with the article link and highlighted context so analysts can understand what the expert is responding to.
 
@@ -56,7 +56,21 @@ docker compose -f docker/docker-compose.yml up -d --build
 docker compose -f docker/docker-compose.yml exec api python seed_demo.py
 ```
 
-The seed command creates a demo panel and survey without requiring ACAPS credentials or an LLM, and prints the invite code (`DEMO1`). Open the analyst dashboard at <http://localhost:8080>. To try the expert flow, load `extension/manifest.json` temporarily in Firefox at `about:debugging#/runtime/this-firefox`, then open <http://localhost:8000/join?code=DEMO1>.
+The seed command creates a demo panel and survey without requiring ACAPS credentials or an LLM, and prints the invite code (`DEMO1`). Open the analyst dashboard at <http://localhost:8080>.
+
+To load the extension and join the demo panel:
+
+1. In Firefox, open <about:debugging#/runtime/this-firefox>.
+2. Click **Load Temporary Add-on…** and select `extension/manifest.json`. A welcome tab opens.
+3. Open <http://localhost:8000/join?code=DEMO1>, or enter `DEMO1` in the welcome tab, then click **This is me, continue**.
+
+To try article matching and commenting, serve the included test article from the repository root:
+
+```bash
+python3 -m http.server 8766 --directory extension/dev
+```
+
+Open <http://localhost:8766/article.html>. The extension should show an article prompt; select text in the article to try the Agree / Disagree / Comment bar.
 
 The SQLite database is stored in the `groundtruth-data` Docker volume. To remove the demo experts and their answers while keeping the database, run:
 
