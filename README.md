@@ -56,7 +56,7 @@ The Firefox extension gives experts three complementary ways to share what they 
 
 <table>
   <tr>
-    <td align="center"><img src="images/free_text_tips_extension.jpeg" alt="Free text field to send tips" height="400"></td>
+    <td align="center"><img src="images/free_text_tips_extension.jpeg" alt="Free text field to send tips" height="300"></td>
   </tr>
   <tr>
     <td align="center">Free text tip</td>
@@ -67,8 +67,8 @@ The Firefox extension gives experts three complementary ways to share what they 
 
 <table>
   <tr>
-    <td align="center"><img src="images/general_article_extension.jpeg" alt="General article submission" height="220"></td>
-    <td align="center"><img src="images/line_comment_extension.jpeg" alt="LComment on a specific article line" height="220"></td>
+    <td align="center"><img src="images/general_article_extension.jpeg" alt="General article submission" height="230"></td>
+    <td align="center"><img src="images/line_comment_extension.jpeg" alt="LComment on a specific article line" height="230"></td>
   </tr>
   <tr>
     <td align="center">General article feedback</td>
