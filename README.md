@@ -77,13 +77,11 @@ To load the extension and join the demo panel:
 2. Click **Load Temporary Add-on…** and select `extension/manifest.json`. A welcome tab opens.
 3. Open <http://localhost:8000/join?code=DEMO1>, or enter `DEMO1` in the welcome tab, then click **This is me, continue**.
 
-To try article matching and commenting, serve the included test article from the repository root:
+To try article matching and commenting, open a news article on one of the supported sites (BBC, Al Jazeera, The Conversation, DW or The New York Times), for example:
 
-```bash
-python3 -m http.server 8766 --directory extension/dev
-```
+<https://www.aljazeera.com/news/longform/2026/2/20/a-fragile-freedom-for-venezuelas-released-political-prisoners>
 
-Open <http://localhost:8766/article.html>. The extension should show an article prompt; select text in the article to try the Agree / Disagree / Comment bar.
+For now, any article on these sites is matched to the expert's risk. After a moment the extension shows an article prompt; select text in the article to try the Agree / Disagree / Comment bar.
 
 The SQLite database is stored in the `groundtruth-data` Docker volume. To remove the demo experts and their answers while keeping the database, run:
 
@@ -96,7 +94,7 @@ See [`extension/README.md`](extension/README.md) for detailed extension setup an
 ## Current prototype scope
 
 - The survey job is currently configured for the demo risk `R1011`.
-- Article matching currently relies on the risk ID or exact risk title in the article text.
+- Article matching is currently a domain allowlist in the extension: any article on a supported news site is linked to the expert's risk.
 - Notifications and contact/email follow-up are prototype workflows; external delivery is not configured.
 - The analyst API requires `ANALYST_API_KEY`. Keep credentials in local environment configuration and do not commit them.
 
