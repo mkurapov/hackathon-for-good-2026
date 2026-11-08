@@ -112,7 +112,9 @@ docker compose -f docker/docker-compose.yml up -d --build
 docker compose -f docker/docker-compose.yml exec api python seed_demo.py
 ```
 
-The seed command creates a demo panel and survey without requiring ACAPS credentials or an LLM, and prints the invite code (`DEMO1`). Open the analyst dashboard at <http://localhost:8080>.
+The seed command creates a demo panel and a **draft** survey without requiring ACAPS credentials or an LLM, and prints the invite code (`DEMO1`).
+
+Publish the survey so experts can see it. Open the analyst dashboard at <http://localhost:8080>, go to **New survey** and click **Publish survey**. (To skip this step, run the seed command with `--publish` instead.) Until the survey is published, the extension has no survey to show.
 
 To load the extension and join the demo panel:
 
