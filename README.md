@@ -1,24 +1,81 @@
-# hackathon-for-good-2026
+# Ground Truth
 
-### Context
+Ground Truth is a prototype built for Hackathon for Good #8 in response to the ACAPS challenge. It helps ACAPS keep in touch with humanitarian experts between risk-report updates, gather local observations, and understand whether published risk assessments reflect what people are seeing on the ground.
 
-ACAPS is an independent humanitarian analysis organisation that monitors more than 100 crises around the world every day. From that monitoring, its analysts build the ACAPS Risk List: an overview of risks that could trigger a new crisis or a sharp deterioration in humanitarian needs. Each risk is rated on the probability that it materialises and on its expected humanitarian impact, both on a five-point scale, which together give a low, medium or high risk level. UN agencies, NGOs and donors use these analyses to prepare and act before a situation escalates.
+## Challenge context
 
-Today, that analysis draws on public sources and on conversations with a small number of experts. ACAPS then publishes. What happens after publication, and whether the people closest to a crisis actually recognise the picture, stays largely invisible.
+ACAPS is an independent humanitarian analysis organisation that monitors more than 100 crises around the world. Its analysts use public sources and expert conversations to create the ACAPS Risk List: risks that could trigger a new crisis or sharply worsen humanitarian needs. Each risk is assessed for likelihood and expected humanitarian impact.
 
-This is the context ACAPS offers you as a team during Hackathon for Good #8.
+After an assessment is published, ACAPS has limited visibility into whether people closest to a crisis recognise the situation described or see new developments. Ground Truth provides lightweight ways for experts to share that perspective, and for analysts to review and act on it.
 
+## Our solution
 
-### Experts
+The prototype connects three parts of the feedback loop:
 
-The Expert Panel
+- **Firefox extension for experts:** experts join with an invite code, answer short surveys one question at a time, share optional free-text tips, and send feedback on relevant news articles. The extension supports an expert's chosen anonymity level and avoids attributing contributions publicly.
+- **Analyst dashboard:** analysts select a risk, onboard and manage experts, review and edit drafted surveys before publishing, view incoming tips and article comments, and queue notifications.
+- **Backend:** a FastAPI service provides the expert and analyst APIs. A survey-preparation job fetches ACAPS risk information, uses an LLM to draft questions, and stores surveys and individual questions in SQLite. Analysts remain in the publishing loop.
 
-For each country or context, ACAPS expects a panel of around 5 to 10 experts, to keep it manageable. Typical profiles:
+### Architecture
 
-    Conflict experts, often active on social media
-    Anticipatory action and early warning practitioners
-    Researchers
-    Local NGO leaders
-    Anyone else with a strong interest in anticipatory analysis
+```mermaid
+flowchart LR
+    ACAPS["ACAPS Risk List API"] --> JOB["Survey preparation job<br/>fetch, select latest updates"]
+    JOB --> LLM["LM Studio<br/>draft survey questions"]
+    LLM --> JOB
+    JOB --> DB[("SQLite<br/>risks, surveys, questions,<br/>experts and contributions")]
 
-Most will have a humanitarian background, but that is not a requirement. What makes the difference is deep knowledge of their own context, and a view on how the humanitarian situation is likely to evolve depending on the triggers for deterioration identified by ACAPS analysts.
+    subgraph Backend["Ground Truth backend"]
+        API["FastAPI<br/>expert + analyst APIs"]
+        DB
+    end
+
+    DB <--> API
+    EXT["Firefox extension<br/>expert experience"] <-->|"expert API"| API
+    DASH["Analyst dashboard<br/>review and manage"] <-->|"analyst API"| API
+```
+
+### Three channels for expert input
+
+The Firefox extension gives experts three complementary ways to share what they know:
+
+1. **Recurring surveys:** When new information is published for an ACAPS risk, the backend prepares an updated set of short yes/no and 1–5 scale questions based on the latest assessment. Analysts review and publish each survey, and experts can answer questions one at a time, skip any they cannot answer, and add optional comments.
+2. **Open text tips:** A free-text box lets experts send any relevant information they have, even when it does not fit a survey question or relate to a specific article.
+3. **Contextual article comments:** When an article matches a risk the expert follows, they can respond to the article or highlight a passage and comment on it. The submission is saved with the article link and highlighted context so analysts can understand what the expert is responding to.
+
+Analysts invite experts and manage the panel in the dashboard, review and edit drafted surveys before publishing, and triage incoming tips and article comments. Experts choose their anonymity settings when they join. Analysts can also queue notifications for a selected risk and audience.
+
+Survey questions are stored both as a complete survey payload and as individual `survey_questions` rows, which can be queried by `risk_id` and `based_on_update`. Expert-facing routes are documented in [`backend/openapi.yaml`](backend/openapi.yaml); implementation and data-flow details are in [`backend/ARCHITECTURE.md`](backend/ARCHITECTURE.md).
+
+## Run the demo locally
+
+The quickest path is Docker Compose. From the repository root:
+
+```bash
+docker compose -f docker/docker-compose.yml up -d --build
+docker compose -f docker/docker-compose.yml exec api python seed_demo.py
+```
+
+The seed command creates a demo panel and survey without requiring ACAPS credentials or an LLM, and prints the invite code (`DEMO1`). Open the analyst dashboard at <http://localhost:8080>. To try the expert flow, load `extension/manifest.json` temporarily in Firefox at `about:debugging#/runtime/this-firefox`, then open <http://localhost:8000/join?code=DEMO1>.
+
+The SQLite database is stored in the `groundtruth-data` Docker volume. To remove the demo experts and their answers while keeping the database, run:
+
+```bash
+docker compose -f docker/docker-compose.yml exec api python seed_demo.py --reset
+```
+
+See [`extension/README.md`](extension/README.md) for detailed extension setup and test instructions. To run the live survey-preparation job instead of using the seeded demo survey, configure ACAPS API credentials and LM Studio settings in `.env`, then run `python daily_job.py` inside the API container.
+
+## Current prototype scope
+
+- The survey job is currently configured for the demo risk `R1011`.
+- Article matching currently relies on the risk ID or exact risk title in the article text.
+- Notifications and contact/email follow-up are prototype workflows; external delivery is not configured.
+- The analyst API requires `ANALYST_API_KEY`. Keep credentials in local environment configuration and do not commit them.
+
+## Repository
+
+- [`backend/`](backend/): FastAPI service, ACAPS client, survey job, and SQLite persistence.
+- [`analyst-dashboard/`](analyst-dashboard/): analyst web application.
+- [`extension/`](extension/): Firefox extension for experts.
+- [`docker/`](docker/): local multi-service Docker Compose setup.
