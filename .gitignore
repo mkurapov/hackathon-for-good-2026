@@ -8,3 +8,4 @@ node_modules/
 dist/
 backend/.cache/
 .claude/
+.DS_Store
