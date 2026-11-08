@@ -62,7 +62,17 @@ Survey questions are stored both as a complete survey payload and as individual 
 
 ## Run the demo locally
 
-The quickest path is Docker Compose. From the repository root:
+The quickest path is Docker Compose.
+
+First, set an analyst API key. The analyst dashboard needs it to reach the backend: the API checks it, and the dashboard's proxy sends it with every request. Create a `.env` file in the repository root (it is git-ignored) with any secret value:
+
+```bash
+echo "ANALYST_API_KEY=$(openssl rand -hex 32)" >> .env
+```
+
+Both the `api` and `dashboard` containers read this file. Without the key, the dashboard's API calls fail with `503 Analyst API is not configured`. If you change the key later, recreate the containers with `docker compose -f docker/docker-compose.yml up -d` so they pick up the new value.
+
+Then, from the repository root:
 
 ```bash
 docker compose -f docker/docker-compose.yml up -d --build
@@ -96,7 +106,7 @@ See [`extension/README.md`](extension/README.md) for detailed extension setup an
 - The survey job is currently configured for the demo risk `R1011`.
 - Article matching is currently a domain allowlist in the extension: any article on a supported news site is linked to the expert's risk.
 - Notifications and contact/email follow-up are prototype workflows; external delivery is not configured.
-- The analyst API requires `ANALYST_API_KEY`. Keep credentials in local environment configuration and do not commit them.
+- The analyst API requires `ANALYST_API_KEY` (see [Run the demo locally](#run-the-demo-locally)). Keep credentials in `.env` and do not commit them.
 
 ## Repository
 
