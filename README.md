@@ -43,8 +43,8 @@ The Firefox extension gives experts three complementary ways to share what they 
 
 <table>
   <tr>
-    <td align="center"><img src="images/binary_survey_extension.jpeg" alt="Binary question in survey" height="300"></td>
-    <td align="center"><img src="images/likert_survery_extension.jpeg" alt="Likert scale question in survey" height="300"></td>
+    <td align="center"><img src="images/binary_survey_extension.jpeg" alt="Binary question in survey" height="400"></td>
+    <td align="center"><img src="images/likert_survery_extension.jpeg" alt="Likert scale question in survey" height="400"></td>
   </tr>
   <tr>
     <td align="center">Binary survey question</td>
@@ -56,7 +56,7 @@ The Firefox extension gives experts three complementary ways to share what they 
 
 <table>
   <tr>
-    <td align="center"><img src="images/free_text_tips_extension.jpeg" alt="Free text field to send tips" height="200"></td>
+    <td align="center"><img src="images/free_text_tips_extension.jpeg" alt="Free text field to send tips" height="300"></td>
   </tr>
   <tr>
     <td align="center">Free text tip</td>
@@ -67,8 +67,8 @@ The Firefox extension gives experts three complementary ways to share what they 
 
 <table>
   <tr>
-    <td align="center"><img src="images/general_article_extension.jpeg" alt="General article submission" height="200"></td>
-    <td align="center"><img src="images/line_comment_extension.jpeg" alt="LComment on a specific article line" height="200"></td>
+    <td align="center"><img src="images/general_article_extension.jpeg" alt="General article submission" height="230"></td>
+    <td align="center"><img src="images/line_comment_extension.jpeg" alt="LComment on a specific article line" height="230"></td>
   </tr>
   <tr>
     <td align="center">General article feedback</td>
