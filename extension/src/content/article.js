@@ -1,4 +1,4 @@
-// Content script for news sites. If the article relates to a risk the expert follows, it shows a
+// Content script for news sites. On the sites listed in the background (NEWS_SITES), it shows a
 // toast and lets the expert agree, disagree or comment on selected passages.
 //
 // The toast, the selection bar and the panel are iframes of extension pages (src/frames), which
@@ -10,8 +10,10 @@
   const FRAMES = browser.runtime.getURL('src/frames/');
   const FRAME_ORIGIN = new URL(FRAMES).origin;
   const TOAST_DELAY = 1500; // ms after the article is recognised
+  const TOAST_FADE = 700; // ms
   let tabId = null;
   let toast = null;
+  let toastShown = false;
   let bar = null;
   let panel = null;
   let range = null;
@@ -29,13 +31,11 @@
       published: meta('article:published_time') || document.querySelector('time[datetime]')?.getAttribute('datetime') || null,
       source: location.hostname.replace(/^www\./, ''),
       text: paragraphs.join('\n\n').slice(0, 20000),
-      looksLikeArticle: meta('og:type') === 'article' || !!document.querySelector('article') || paragraphs.length >= 3,
     };
   }
 
   async function check() {
     const article = extract();
-    if (!article.looksLikeArticle) return;
     const res = await browser.runtime.sendMessage({ type: 'article-detected', article });
     if (!res?.matched) return;
     tabId = res.tabId;
@@ -43,7 +43,7 @@
     document.addEventListener('mousedown', onMouseDown, true);
     document.addEventListener('keydown', e => { if (e.key === 'Escape') hideBar(); });
     // Let the expert start reading before the toast fades in.
-    if (res.showToast) setTimeout(showToast, TOAST_DELAY);
+    setTimeout(showToast, TOAST_DELAY);
   }
 
   // ---------- frames ----------
@@ -67,6 +67,7 @@
   window.addEventListener('message', e => {
     if (e.origin !== FRAME_ORIGIN || !e.data?.acaps) return;
     if (panel && e.source === panel.contentWindow && e.data.close) return closePanel();
+    if (toast && e.source === toast.contentWindow && e.data.ready) return fadeInToast();
     const f = [toast, bar].find(x => x && x.contentWindow === e.source);
     if (!f || !e.data.width || !e.data.height) return; // not laid out yet
     f.style.width = e.data.width + 'px';
@@ -76,9 +77,30 @@
 
   function showToast() {
     if (toast) return;
+    toastShown = false;
     // The frame includes clear space for the card's shadow (see toast.html), so it sits past the
-    // corner a little: the card itself ends up 20px from the edges.
-    toast = frame('toast.html', { position: 'fixed', right: '-4px', bottom: '-14px', width: '384px', height: '220px' });
+    // corner a little: the card itself ends up 20px from the edges. It stays hidden until the card
+    // has drawn and reported its size, so the fade does not start on a blank or wrongly sized frame.
+    toast = frame('toast.html', {
+      position: 'fixed', right: '-4px', bottom: '-14px', width: '384px', height: '220px',
+      opacity: '0', transform: 'translateY(16px)', pointerEvents: 'none',
+    });
+  }
+
+  // Fades the toast in while it rises slightly. Runs once the card has drawn with its fonts and
+  // reported its final size, so nothing moves during the fade.
+  function fadeInToast() {
+    if (toastShown) return;
+    toastShown = true;
+    toast.style.opacity = '1';
+    toast.style.transform = 'none';
+    toast.style.pointerEvents = '';
+    // With "reduce motion" on it still fades, just without the rise.
+    const rise = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    toast.animate(
+      [{ opacity: 0, transform: rise ? 'translateY(16px)' : 'none' }, { opacity: 1, transform: 'none' }],
+      { duration: TOAST_FADE, easing: 'cubic-bezier(.2,.8,.2,1)' },
+    );
   }
 
   function openPanel(view, focus) {

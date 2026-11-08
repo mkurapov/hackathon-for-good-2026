@@ -5,14 +5,13 @@
 <link rel="stylesheet" href="../lib/ui.css">
 <link rel="stylesheet" href="frame.css">
 <style>
-  /* Room for the shadow (0 6px 20px) and the 14px rise of the fade. */
+  /* Room for the shadow (0 6px 20px). */
   body { padding: 16px 24px 34px; }
   .toast { width: 336px; background: #fff; border-radius: 6px; box-shadow: 0 6px 20px rgba(0,0,0,.25); overflow: hidden; border-top: 4px solid var(--navy); }
-  /* Fades in while rising slightly, and fades out when dismissed. */
-  .toast { opacity: 0; transform: translateY(14px); transition: opacity .7s ease-out, transform .7s ease-out; }
-  .toast.shown { opacity: 1; transform: none; }
-  .toast.leaving { opacity: 0; transform: translateY(8px); transition-duration: .3s; }
-  @media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
+  /* The page fades the whole frame in (see showToast in article.js); this fades the card out. */
+  .toast { transition: opacity .3s ease-in, transform .3s ease-in; }
+  .toast.leaving { opacity: 0; transform: translateY(8px); }
+  @media (prefers-reduced-motion: reduce) { .toast.leaving { transform: none; } }
   .t-head { display: flex; align-items: center; gap: 8px; padding: 10px 12px 0; }
   .t-head .logo { height: 24px; }
   .t-body { padding: 6px 12px 12px; font-size: 15px; }

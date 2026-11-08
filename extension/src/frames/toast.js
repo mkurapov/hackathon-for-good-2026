@@ -67,8 +67,14 @@ function renderThanks(article) {
   setTimeout(dismiss, 5000);
 }
 
-send('tab-info', { tabId }).then(info => {
+// Tell the page the card is ready to fade in, once its fonts have loaded. The fonts swap in after
+// a fallback, and the card changes size when they do, which would make it jump mid-fade.
+send('tab-info', { tabId }).then(async info => {
   renderAsk(info);
-  // Start the fade once the card has been drawn invisible, so the transition runs.
-  requestAnimationFrame(() => requestAnimationFrame(() => root.classList.add('shown')));
+  await Promise.all([
+    document.fonts.load('400 15px "Roboto Condensed"'),
+    document.fonts.load('700 15px "Roboto Condensed"'),
+  ]).catch(() => {});
+  await document.fonts.ready;
+  requestAnimationFrame(() => window.parent.postMessage({ acaps: true, ready: true }, '*'));
 });

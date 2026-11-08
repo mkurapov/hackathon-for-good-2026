@@ -57,20 +57,11 @@
   "content_scripts": [
     {
       "matches": [
-        "*://*.reuters.com/*",
-        "*://*.apnews.com/*",
         "*://*.bbc.com/*",
-        "*://*.bbc.co.uk/*",
         "*://*.aljazeera.com/*",
-        "*://*.theguardian.com/*",
-        "*://*.france24.com/*",
-        "*://*.rfi.fr/*",
-        "*://*.lemonde.fr/*",
-        "*://*.elpais.com/*",
-        "*://*.efectococuyo.com/*",
-        "*://*.reliefweb.int/*",
-        "*://*.thenewhumanitarian.org/*",
-        "*://*.crisisgroup.org/*",
+        "*://*.theconversation.com/*",
+        "*://*.dw.com/*",
+        "*://*.nytimes.com/*",
         "http://localhost/*",
         "http://127.0.0.1/*"
       ],
