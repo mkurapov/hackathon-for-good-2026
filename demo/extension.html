@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ground Truth | Expert extension (mock)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Roboto+Condensed:ital,wght@0,300;0,400;0,700;1,400&family=Source+Serif+4:wght@400;700&display=swap" rel="stylesheet">
+<!--
+  Static mock of the Firefox extension (extension/) running in a fake browser window, on a
+  made-up news article. No backend: everything lives in memory, so reloading the page resets it.
+-->
+<style>
+  :root {
+    --navy: #004b78; --navy-dark: #003c60; --cyan: #0096ba; --red: #d43d3d; --green: #5c9b53;
+    --text: #212121; --muted: #6c6c6c; --line: #dedede; --bg: #f2f2f2; --bg-soft: #f8f8f8;
+    --font: "Roboto Condensed", "Arial Narrow", Arial, sans-serif;
+    --font-display: "Bebas Neue", "Arial Narrow", Impact, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; font-family: var(--font); font-size: 15px; color: var(--text); background: #d9dde0; }
+  button { font-family: inherit; }
+
+  .demo-note { background: #fdf3e1; border-bottom: 1px solid #f3dcae; padding: 6px 16px; font-size: 13px; text-align: center; }
+  .demo-note a, .demo-note button { color: var(--navy); font-weight: 700; background: none; border: 0; padding: 0; cursor: pointer; font-size: inherit; text-decoration: underline; }
+
+  /* ---------- Fake browser ---------- */
+  .stage { padding: 18px 16px; }
+  .browser { max-width: 1280px; margin: 0 auto; height: calc(100vh - 70px); min-height: 560px; background: #fff; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,.2); display: flex; flex-direction: column; overflow: hidden; position: relative; }
+  .tabs { display: flex; align-items: flex-end; gap: 6px; background: #e3e5e8; padding: 8px 10px 0; }
+  .tab { background: #fff; border-radius: 6px 6px 0 0; padding: 7px 14px; font-size: 13px; max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; gap: 8px; align-items: center; }
+  .tab .fav { width: 14px; height: 14px; border-radius: 3px; background: #7a2131; color: #fff; font: 700 10px/14px Georgia, serif; text-align: center; flex: none; }
+  .toolbar { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-bottom: 1px solid #e0e0e0; }
+  .nav-btns { color: #888; font-size: 16px; letter-spacing: 10px; }
+  .url { flex: 1; min-width: 0; background: #f0f0f4; border-radius: 4px; padding: 6px 12px; font-size: 13px; color: #444; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .url b { color: #111; font-weight: 400; }
+  .ext-btn { position: relative; width: 34px; height: 30px; border-radius: 4px; border: 0; background: var(--navy); cursor: pointer; display: grid; place-items: center; }
+  .ext-btn:hover, .ext-btn.open { background: var(--navy-dark); }
+  .ext-btn svg { height: 18px; }
+  .ext-btn .badge { position: absolute; top: -5px; right: -6px; background: var(--cyan); color: #fff; font-size: 10px; font-weight: 700; border-radius: 8px; min-width: 16px; height: 16px; display: grid; place-items: center; padding: 0 4px; }
+  .sidebar-btn { border: 1px solid #ccc; background: #fff; border-radius: 4px; height: 30px; padding: 0 8px; cursor: pointer; font-size: 12px; color: #444; }
+  .content { flex: 1; display: flex; min-height: 0; position: relative; }
+
+  /* ---------- Article (fictional outlet) ---------- */
+  .page { flex: 1; overflow-y: auto; position: relative; background: #fff; }
+  .masthead { border-bottom: 3px double #222; padding: 14px 24px 10px; display: flex; align-items: baseline; gap: 18px; }
+  .masthead .name { font: 700 30px/1 "Source Serif 4", Georgia, serif; color: #7a2131; letter-spacing: -.5px; }
+  .masthead nav { font-size: 13px; color: #555; display: flex; gap: 14px; flex-wrap: wrap; }
+  article { max-width: 680px; margin: 0 auto; padding: 28px 24px 80px; font-family: "Source Serif 4", Georgia, serif; }
+  article .kicker { font-family: var(--font); font-size: 12px; font-weight: 700; letter-spacing: .8px; color: #7a2131; text-transform: uppercase; }
+  article h1 { font-size: 34px; line-height: 1.15; margin: 8px 0 12px; }
+  article .standfirst { font-size: 19px; color: #444; line-height: 1.45; margin: 0 0 14px; }
+  article .byline { font-family: var(--font); font-size: 13px; color: #666; border-top: 1px solid #ddd; border-bottom: 1px solid #ddd; padding: 8px 0; margin-bottom: 22px; }
+  article p { font-size: 18px; line-height: 1.65; margin: 0 0 18px; }
+  .photo { height: 220px; border-radius: 3px; margin: 0 0 6px; background: linear-gradient(135deg, #8aa5b5 0%, #c9b79a 55%, #a1876a 100%); }
+  .caption { font-family: var(--font); font-size: 12px; color: #777; margin-bottom: 22px; }
+  mark.acaps-hl { background: #b8e3ee; color: inherit; padding: 1px 0; border-bottom: 2px solid var(--cyan); }
+  mark.acaps-hl.agree { background: #deebdd; border-bottom-color: var(--green); }
+  mark.acaps-hl.disagree { background: #f6d8d8; border-bottom-color: var(--red); }
+
+  /* ---------- Extension UI (matches extension/src/lib/ui.css) ---------- */
+  .ext { font-family: var(--font); font-size: 15px; color: var(--text); background: #fff; }
+  .ext-head { background: var(--navy); color: #fff; display: flex; align-items: center; gap: 10px; padding: 8px 14px; flex: none; }
+  .ext-logo { display: flex; align-items: center; gap: 6px; font: 400 22px/1 var(--font-display); letter-spacing: 1px; }
+  .ext-logo svg { height: 16px; }
+  .ext-head .sub { font-size: 12px; opacity: .85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .ext-head .spacer { flex: 1; }
+  .icon-btn { background: transparent; border: 1px solid rgba(255,255,255,.35); color: #fff; border-radius: 3px; font-size: 12px; padding: 3px 8px; cursor: pointer; white-space: nowrap; }
+  .icon-btn:hover { background: rgba(255,255,255,.1); }
+  .ext-body { padding: 14px; }
+  .ext-foot { border-top: 1px solid var(--line); padding: 10px 14px; display: flex; gap: 8px; align-items: center; background: var(--bg-soft); flex: none; }
+  .ext h3 { font-family: var(--font-display); font-weight: 400; color: var(--navy); margin: 0 0 8px; font-size: 22px; letter-spacing: .3px; }
+  .label { font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); font-weight: 700; margin: 0 0 6px; }
+  .muted { color: var(--muted); }
+  .small { font-size: 13px; }
+  .stack > * + * { margin-top: 12px; }
+  .btn { font-weight: 700; font-size: 15px; border-radius: 3px; padding: 8px 14px; cursor: pointer; border: 1px solid var(--navy); background: var(--navy); color: #fff; }
+  .btn:hover { background: var(--navy-dark); }
+  .btn.secondary { background: #fff; color: var(--navy); }
+  .btn.secondary:hover { background: #e6edf2; }
+  .btn.cyan { background: var(--cyan); border-color: var(--cyan); }
+  .btn.agree { background: var(--green); border-color: var(--green); }
+  .btn.disagree { background: var(--red); border-color: var(--red); }
+  .btn.block { width: 100%; }
+  .btn.sm { padding: 5px 10px; font-size: 13px; }
+  .btn:disabled { opacity: .4; cursor: default; }
+  .link { color: var(--cyan); font-weight: 700; cursor: pointer; background: none; border: 0; font-size: inherit; padding: 0; }
+  .link:hover { text-decoration: underline; }
+  .ext textarea, .ext input[type=text] { width: 100%; font: inherit; border: 1px solid var(--line); border-radius: 3px; padding: 8px 10px; background: #fff; color: var(--text); }
+  .ext textarea { resize: vertical; min-height: 80px; }
+  .ext textarea:focus, .ext input:focus { outline: 2px solid rgba(0,150,186,.35); border-color: var(--cyan); }
+  .card { border: 1px solid var(--line); border-radius: 4px; padding: 12px; margin-bottom: 12px; background: #fff; }
+  .card.info { border-left: 4px solid var(--cyan); }
+  .card.invite { background: #eef7fa; border-color: #cfe7ef; border-left: 4px solid var(--cyan); }
+  .mini-progress { height: 4px; background: #d6ecf2; border-radius: 2px; overflow: hidden; }
+  .mini-progress > div { height: 100%; background: var(--cyan); }
+  .success { text-align: center; padding: 24px 14px; }
+  .success .tick { width: 54px; height: 54px; border-radius: 50%; background: var(--green); color: #fff; display: grid; place-items: center; margin: 0 auto 12px; font-size: 28px; font-weight: 700; }
+  .progress { height: 4px; background: var(--bg); flex: none; }
+  .progress > div { height: 100%; background: var(--cyan); transition: width .2s; }
+  .q-num { font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--cyan); font-weight: 700; margin-bottom: 8px; display: flex; justify-content: space-between; }
+  .q-num .link { font-weight: 400; text-transform: none; letter-spacing: 0; font-size: 13px; }
+  .q-body { font-size: 18px; line-height: 1.4; margin: 0 0 20px; font-weight: 700; }
+  .context-box { background: var(--bg-soft); border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px; font-size: 13px; margin-bottom: 12px; }
+  .answers { display: flex; gap: 4px; }
+  .answers button { flex: 1; font-weight: 700; font-size: 18px; padding: 14px 0; border: 1px solid var(--line); background: #fff; border-radius: 3px; cursor: pointer; color: var(--text); }
+  .answers button:hover { border-color: var(--cyan); }
+  .answers button.on { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .answers button.skip { flex: 1.4; font-size: 12px; font-weight: 400; color: var(--muted); }
+  .answers button.skip.on { background: var(--muted); border-color: var(--muted); color: #fff; }
+  .legend { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin: 4px 0 0; padding-right: 28%; }
+  .stance { display: flex; gap: 6px; }
+  .stance button { flex: 1; font-weight: 700; font-size: 15px; padding: 9px 0; border-radius: 3px; cursor: pointer; background: #fff; }
+  .stance .agree { border: 1px solid var(--green); color: var(--green); }
+  .stance .disagree { border: 1px solid var(--red); color: var(--red); }
+  .stance .agree.on { background: var(--green); color: #fff; }
+  .stance .disagree.on { background: var(--red); color: #fff; }
+  .stance-tag { display: inline-block; font-size: 11px; font-weight: 700; border-radius: 9px; padding: 1px 7px; margin-bottom: 4px; color: #fff; }
+  .stance-tag.agree { background: var(--green); }
+  .stance-tag.disagree { background: var(--red); }
+  .quote { margin: 0 0 6px; padding: 6px 10px; border-left: 3px solid var(--cyan); background: var(--bg-soft); font-size: 13px; font-style: italic; }
+  .highlight { position: relative; margin: 6px 0 0; padding: 8px 10px; }
+  .highlight textarea { min-height: 50px; font-size: 14px; }
+  .highlight .remove { position: absolute; top: 4px; right: 8px; color: var(--muted); font-size: 18px; font-weight: 400; }
+
+  /* Popup: hangs under the toolbar button. */
+  .popup { position: absolute; top: 88px; right: 52px; width: 360px; max-width: calc(100% - 20px); z-index: 20; border-radius: 6px; overflow: hidden; box-shadow: 0 8px 28px rgba(0,0,0,.25); border: 1px solid #ccc; }
+
+  /* Firefox sidebar */
+  .ff-sidebar { width: 380px; flex: none; border-left: 1px solid #d0d0d0; display: flex; flex-direction: column; min-height: 0; background: #fff; }
+  .ff-title { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; font-size: 13px; background: #f0f0f4; border-bottom: 1px solid #ddd; }
+  .ff-title button { border: 0; background: none; font-size: 18px; cursor: pointer; color: #555; }
+  .ff-sidebar .ext { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  .ff-sidebar .ext-body { flex: 1; overflow-y: auto; }
+
+  /* Toast on a matched article */
+  .toast { position: absolute; right: 20px; bottom: 20px; width: 336px; max-width: calc(100% - 40px); background: #fff; border-radius: 6px; box-shadow: 0 6px 20px rgba(0,0,0,.25); overflow: hidden; border-top: 4px solid var(--navy); z-index: 15; transition: opacity .5s, transform .5s; }
+  .toast.hidden { opacity: 0; transform: translateY(16px); pointer-events: none; }
+  .t-head { display: flex; align-items: center; gap: 8px; padding: 10px 12px 0; }
+  .t-head svg { height: 24px; width: 24px; }
+  .t-head .chip { font-size: 13px; padding: 2px 8px; border-radius: 10px; background: #e6edf2; color: var(--navy); font-weight: 700; }
+  .t-head .close { margin-left: auto; background: none; border: 0; font-size: 22px; color: var(--muted); cursor: pointer; line-height: 1; }
+  .t-body { padding: 6px 12px 12px; }
+  .t-actions { display: flex; gap: 6px; margin-top: 10px; }
+  .t-actions > * { flex: 1; font-size: 14px; }
+  .t-more { display: flex; gap: 14px; margin-top: 10px; }
+
+  /* Selection bar */
+  .selbar { position: absolute; z-index: 16; filter: drop-shadow(0 3px 6px rgba(0,0,0,.25)); font-family: var(--font); }
+  .selbar .tag { background: var(--navy); padding: 4px 8px 2px; border-radius: 4px 4px 0 0; color: #fff; font: 400 16px/1 var(--font-display); letter-spacing: 1px; display: flex; gap: 5px; align-items: center; }
+  .selbar .tag svg { height: 12px; }
+  .selbar .row { display: flex; gap: 5px; background: var(--navy); padding: 4px; border-radius: 0 4px 4px 4px; white-space: nowrap; }
+  .selbar .row button { font-weight: 700; font-size: 15px; border-radius: 3px; padding: 6px 12px; cursor: pointer; color: #fff; border: 1px solid transparent; }
+  .selbar .agree { background: var(--green); }
+  .selbar .disagree { background: var(--red); }
+  .selbar .comment { background: transparent; border: 2px solid #fff !important; }
+
+  .hint { max-width: 1280px; margin: 0 auto 10px; font-size: 13px; color: #444; display: flex; gap: 18px; flex-wrap: wrap; }
+  .hint b { color: var(--navy); }
+
+  @media (max-width: 760px) {
+    .stage { padding: 10px 8px; }
+    .ff-sidebar { position: absolute; inset: 0; width: auto; z-index: 18; }
+    .popup { right: 10px; }
+    article h1 { font-size: 27px; }
+    article p { font-size: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="demo-note">Mock of the ACAPS expert extension with made-up data. Nothing is sent anywhere. <button data-reset>Reset</button> · See also the <a href="dashboard.html">analyst dashboard mock</a>.</div>
+
+<div class="stage">
+  <div class="hint">
+    <span><b>1.</b> Click the ACAPS button in the toolbar</span>
+    <span><b>2.</b> Answer the survey</span>
+    <span><b>3.</b> Select text in the article to agree, disagree or comment</span>
+  </div>
+  <div class="browser">
+    <div class="tabs"><div class="tab"><span class="fav">M</span>Venezuela's new cabinet promises calm as released prisoners return home</div></div>
+    <div class="toolbar">
+      <span class="nav-btns">&larr;&rarr;&#8635;</span>
+      <div class="url">https://<b>meridian-news.example</b>/world/americas/2026/11/venezuela-cabinet-released-prisoners</div>
+      <button class="sidebar-btn" data-toggle-sidebar title="Toggle the ACAPS sidebar">Sidebar</button>
+      <button class="ext-btn" id="extBtn" title="ACAPS" data-toggle-popup><span id="pinWhite"></span><span class="badge" id="badge">1</span></button>
+    </div>
+    <div class="content">
+      <div class="page" id="page">
+        <div class="masthead"><span class="name">The Meridian</span><nav><span>World</span><span>Americas</span><span>Climate</span><span>Opinion</span></nav></div>
+        <article id="article">
+          <div class="kicker">Americas · Venezuela</div>
+          <h1>Venezuela's new cabinet promises calm as released prisoners return home</h1>
+          <p class="standfirst">Seven months into a transition few predicted, officials in Caracas say the worst is over. In the countryside, the picture is less clear.</p>
+          <div class="byline">By a staff correspondent · 6 November 2026 · 6 min read</div>
+          <div class="photo" role="img" aria-label="Illustration"></div>
+          <div class="caption">Illustration. This article is fictional and written for the Ground Truth demo.</div>
+          <p>Government spokespeople on Tuesday described the country as "stable and recovering", pointing to the release of more than 400 opposition figures since April and a steady rise in oil shipments under new export agreements.</p>
+          <p>Officials say all released opposition figures are free to travel and speak publicly. Several have already given interviews to local radio stations, and two have announced plans to stand in regional elections expected next year.</p>
+          <p>The military, long seen as the deciding factor in Venezuelan politics, has shown no visible fractures since the defence minister was replaced. Senior commanders appeared alongside the new cabinet at a ceremony in Caracas last week.</p>
+          <p>Outside the capital, aid workers describe a slower recovery. Health posts in rural Zulia report patients travelling up to six hours for basic care, and fuel shortages continue to delay deliveries of medicine from regional depots.</p>
+          <p>Along the Colombian border, crossings have partially reopened. Traders in Táchira say movement is easier than at the start of the year, though checkpoints remain frequent and unpredictable.</p>
+          <p>The continued presence of US naval vessels in the Caribbean has drawn criticism from some regional governments. Humanitarian groups say port inspections have added days to the arrival of relief supplies, a claim US officials dispute.</p>
+          <p>Analysts caution that the situation could still change quickly. "The calm in Caracas is real," said one researcher who works in the country, "but it does not tell you much about what is happening in Apure or Zulia."</p>
+        </article>
+        <div class="selbar" id="selbar" hidden>
+          <div style="display:inline-flex; flex-direction:column; align-items:flex-start">
+            <div class="tag"><span data-pin></span>ACAPS</div>
+            <div class="row">
+              <button class="agree" data-sel="agree">Agree</button>
+              <button class="disagree" data-sel="disagree">Disagree</button>
+              <button class="comment" data-sel="comment">Comment</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <aside class="ff-sidebar" id="sidebar" hidden>
+        <div class="ff-title"><span>ACAPS</span><button data-toggle-sidebar title="Close sidebar">&times;</button></div>
+        <div class="ext" id="sidebarRoot"></div>
+      </aside>
+      <div class="toast hidden" id="toast"></div>
+    </div>
+    <div class="popup ext" id="popup" hidden></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  // ---------- made-up data (questions match backend/seed_demo.py) ----------
+  const RISK_TITLE = 'US military build-up in the Caribbean triggers internal destabilisation in Venezuela and heightens humanitarian needs';
+  const BASED_ON = '01/04/2026';
+  const ARTICLE = {
+    title: "Venezuela's new cabinet promises calm as released prisoners return home",
+    source: 'meridian-news.example · 6 November 2026',
+  };
+  const BINARY = [
+    'Is there organised resistance from former Chavista loyalists against the new cabinet where you are?',
+    'Are rural food supply chains in Venezuela working well enough to prevent a rise in acute malnutrition?',
+    'Are released opposition leaders in Venezuela able to operate freely, without house arrest or monitoring?',
+    'Are displaced people in high-risk areas of Venezuela returning home voluntarily, without pressure from the authorities?',
+    "Has the US naval presence off Venezuela's coast made it harder to deliver humanitarian aid?",
+  ];
+  const LIKERT = [
+    ['likelihood', 'How likely is it that military units in Venezuela turn against the new cabinet in the next three months?'],
+    ['urgency', 'How urgent is the lack of food and healthcare for rural communities in high-risk areas of Venezuela, compared to early 2026?'],
+    ['likelihood', 'How likely is it that recently released opposition leaders in Venezuela are still under surveillance or pressure?'],
+    ['scale', "How strong is local resistance to the new policies in Venezuela's border regions?"],
+    ['likelihood', 'How likely is it that state services collapse in parts of Venezuela in the next quarter because of armed group activity?'],
+  ];
+  const QUESTIONS = [
+    ...BINARY.map((text, i) => ({ id: 'B' + (i + 1), type: 'binary', text })),
+    ...LIKERT.map(([dimension, text], i) => ({ id: 'L' + (i + 1), type: 'likert', dimension, text })),
+  ];
+  const SCALE_LABELS = {
+    likelihood: ['Very unlikely', 'Very likely'], urgency: ['Not urgent', 'Very urgent'], scale: ['Low', 'High'],
+  };
+
+  // ACAPS pin mark (from extension/icons/pin-white.svg).
+  const PIN = fill => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="120 84 620 702" aria-hidden="true"><g transform="translate(0,857) scale(0.1,-0.1)" fill="${fill}"><path d="M4120 7664 c-427 -38 -745 -124 -1090 -295 -408 -203 -741 -480 -1016 -846 -696 -924 -760 -2195 -162 -3187 75 -124 160 -243 256 -360 41 -50 551 -568 1133 -1151 l1059 -1060 991 990 c1055 1054 1164 1166 1295 1342 654 869 754 2039 259 3013 -428 840 -1238 1410 -2184 1535 -113 15 -450 27 -541 19z m308 -874 c485 -33 910 -223 1260 -564 313 -304 511 -692 578 -1131 22 -147 22 -423 0 -570 -157 -1031 -1071 -1768 -2103 -1695 -469 34 -893 221 -1231 544 -498 476 -713 1160 -577 1834 175 865 924 1523 1799 1582 61 4 116 8 121 8 6 1 75 -3 153 -8z"/><path d="M4145 5890 c-590 -92 -1011 -630 -947 -1209 30 -267 130 -479 317 -667 326 -331 811 -423 1236 -235 485 214 754 763 625 1272 -54 214 -139 363 -295 520 -156 156 -305 240 -520 296 -108 27 -312 39 -416 23z"/></g></svg>`;
+  const PIN_TILE = `<svg viewBox="0 0 96 96" aria-hidden="true"><rect width="96" height="96" rx="16" fill="#004b78"/><g transform="translate(11,11) scale(0.0855)">${PIN('#fff').replace(/^<svg[^>]*>|<\/svg>$/g, '')}</g></svg>`;
+
+  // ---------- state ----------
+  const state = {
+    popupOpen: false,
+    sidebarView: null, // null (closed) | 'home' | 'survey' | 'feedback'
+    noteDraft: '',
+    noteSent: false,
+    contact: 'idle', // 'idle' | 'form' | 'sent'
+    survey: { step: 0, answers: {}, comments: {}, showContext: false, submitted: false, done: false },
+    feedback: { stance: null, comment: '', highlights: [], sent: false },
+    toast: 'ask', // 'ask' | 'thanks' | 'gone'
+  };
+
+  const $ = (root, sel) => root.querySelector(sel);
+  const $$ = (root, sel) => [...root.querySelectorAll(sel)];
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const head = (sub, right = '') =>
+    `<div class="ext-head"><span class="ext-logo">${PIN('#fff')}ACAPS</span><div class="sub">${esc(sub)}</div><div class="spacer"></div>${right}</div>`;
+  const success = (title, text, button = '') =>
+    `<div class="success"><div class="tick">&#10003;</div><h3>${esc(title)}</h3><p class="small muted">${text}</p>${button}</div>`;
+  const surveyWaiting = () => !state.survey.done;
+  const answered = () => Object.keys(state.survey.answers).length;
+
+  const popup = document.getElementById('popup');
+  const sidebar = document.getElementById('sidebar');
+  const sidebarRoot = document.getElementById('sidebarRoot');
+  const toast = document.getElementById('toast');
+  const selbar = document.getElementById('selbar');
+  const page = document.getElementById('page');
+
+  // ---------- home (popup and sidebar) ----------
+  function renderHome(root, inSidebar) {
+    const total = QUESTIONS.length;
+    const right = inSidebar ? '' : '<button class="icon-btn" data-open-sidebar="home" title="Open in sidebar">Open in sidebar</button>';
+    const surveyCard = surveyWaiting() ? `
+      <div class="card invite">
+        <div class="label" style="color:var(--cyan); margin-bottom:2px">Your view is wanted</div>
+        <div style="font-weight:700">${esc(RISK_TITLE)}</div>
+        <div class="small muted" style="margin:2px 0 8px">Help shape ACAPS's next analysis.</div>
+        <div class="mini-progress"><div style="width:${answered() / total * 100}%"></div></div>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:10px">
+          <span class="small muted">${answered()} of ${total} answered</span>
+          <button class="btn cyan sm" data-open-sidebar="survey">${answered() ? 'Continue' : 'Start'} &rarr;</button>
+        </div>
+      </div>` : '';
+    const articleCard = inSidebar ? `
+      <div class="card info">
+        <div class="label">This article</div>
+        <div style="font-weight:700; font-size:14px">${esc(ARTICLE.title)}</div>
+        <div class="small muted" style="margin:2px 0 8px">Relates to ${esc(RISK_TITLE)}</div>
+        <button class="btn sm" data-open-sidebar="feedback">Share your view &rarr;</button>
+      </div>` : '';
+    const shareBox = state.noteSent
+      ? success('Sent to ACAPS', 'Thank you. Analysts review submissions daily.', '<button class="btn secondary sm" data-note-again>Share something else</button>')
+      : `<div class="label">Share information with ACAPS</div>
+         <textarea data-note placeholder="What are you seeing on the ground? Rumours, incidents, access changes…">${esc(state.noteDraft)}</textarea>
+         <div style="display:flex; gap:8px; margin-top:8px; align-items:center">
+           <span class="small muted" style="flex:1">About ${esc(RISK_TITLE.split(' triggers')[0])}…</span>
+           <button class="btn" data-send-note ${state.noteDraft.trim() ? '' : 'disabled'}>Send</button>
+         </div>`;
+    const foot = state.contact === 'sent'
+      ? '<div class="ext-foot small"><span style="color:var(--green); font-weight:700">Contact requested – ACAPS will be in touch</span></div>'
+      : state.contact === 'form'
+        ? `<div class="ext-foot small" style="display:block">
+            <input type="text" data-contact-note placeholder="What's it about? (optional)">
+            <div class="muted" style="margin-top:6px">ACAPS will use the contact details they already have.</div>
+            <div style="display:flex; gap:8px; margin-top:8px; justify-content:flex-end">
+              <button class="btn secondary sm" data-contact="idle">Cancel</button>
+              <button class="btn sm" data-contact="sent">Request contact</button>
+            </div></div>`
+        : '<div class="ext-foot"><button class="btn secondary block" data-contact="form">Ask ACAPS to contact me</button></div>';
+
+    root.innerHTML = head('Expert network', right) + `<div class="ext-body">${surveyCard}${articleCard}${shareBox}</div>${foot}`;
+
+    const note = $(root, '[data-note]');
+    if (note) note.oninput = () => {
+      state.noteDraft = note.value;
+      $(root, '[data-send-note]').disabled = !note.value.trim();
+    };
+  }
+
+  // ---------- survey (sidebar) ----------
+  function renderSurvey(root) {
+    const s = state.survey;
+    if (s.submitted || !surveyWaiting()) {
+      root.innerHTML = head('Survey') + `<div class="progress"><div style="width:100%"></div></div>
+        <div class="ext-body">${success('Thank you', 'Your answers have been sent to ACAPS.', '<button class="btn secondary sm" data-open-sidebar="home">Close</button>')}</div>`;
+      return;
+    }
+    const total = QUESTIONS.length;
+    const q = QUESTIONS[s.step];
+    const has = q.id in s.answers;
+    const value = s.answers[q.id];
+    const isLast = s.step === total - 1;
+    const dontKnow = `<button class="skip ${has && value === null ? 'on' : ''}" data-answer="null">Don't know</button>`;
+    let answers;
+    if (q.type === 'likert') {
+      const [lo, hi] = SCALE_LABELS[q.dimension];
+      answers = `<div class="answers">${[1, 2, 3, 4, 5].map(n =>
+        `<button data-answer="${n}" class="${value === n ? 'on' : ''}">${n}</button>`).join('')}${dontKnow}</div>
+        <div class="legend"><span>${lo}</span><span>${hi}</span></div>`;
+    } else {
+      answers = `<div class="answers">
+        <button data-answer="true" class="${value === true ? 'on' : ''}">Yes</button>
+        <button data-answer="false" class="${value === false ? 'on' : ''}">No</button>${dontKnow}</div>`;
+    }
+    root.innerHTML = head(RISK_TITLE, '<button class="icon-btn" data-open-sidebar="home">Finish later</button>') + `
+      <div class="progress"><div style="width:${s.step / total * 100}%"></div></div>
+      <div class="ext-body">
+        <div class="q-num"><span>${q.type === 'binary' ? 'Verify' : 'Forecast'}</span>
+          <button class="link" data-context>${s.showContext ? 'Hide context' : 'Context'}</button></div>
+        ${s.showContext ? `<div class="context-box">Based on the ACAPS update of ${BASED_ON} for <b>${esc(RISK_TITLE)}</b>.</div>` : ''}
+        <p class="q-body">${esc(q.text)}</p>
+        ${answers}
+        <textarea data-q-comment style="margin-top:16px" placeholder="Comment (optional)">${esc(s.comments[q.id] || '')}</textarea>
+      </div>
+      <div class="ext-foot">
+        <button class="btn secondary sm" data-step="-1" ${s.step === 0 ? 'style="visibility:hidden"' : ''}>&larr; Back</button>
+        <span class="small muted" style="flex:1; text-align:center">${s.step + 1} of ${total}</span>
+        <button class="btn sm" data-step="1">${isLast ? 'Submit' : 'Next &rarr;'}</button>
+      </div>`;
+    $(root, '[data-q-comment]').oninput = e => { s.comments[q.id] = e.target.value; };
+  }
+
+  function stepSurvey(delta) {
+    const s = state.survey;
+    s.showContext = false;
+    if (s.step + delta >= QUESTIONS.length) {
+      s.submitted = true;
+      s.done = true;
+    } else {
+      s.step = Math.max(0, s.step + delta);
+    }
+    renderAll();
+  }
+
+  function answerSurvey(raw) {
+    const s = state.survey;
+    const q = QUESTIONS[s.step];
+    s.answers[q.id] = JSON.parse(raw);
+    const step = s.step;
+    renderAll();
+    // Moves on by itself unless the expert typed a comment; never auto-submits.
+    if (step < QUESTIONS.length - 1 && !(s.comments[q.id] || '').trim()) {
+      setTimeout(() => { if (s.step === step) stepSurvey(1); }, 250);
+    }
+  }
+
+  // ---------- article feedback (sidebar) ----------
+  function renderFeedback(root, focusId) {
+    const f = state.feedback;
+    const back = '<button class="icon-btn" data-open-sidebar="home">&larr; Back</button>';
+    if (f.sent) {
+      root.innerHTML = head('Share your view', back) + `<div class="ext-body">${success('Sent to ACAPS',
+        'Thank you. Your view was sent with the article link.', '<button class="btn secondary sm" data-feedback-again>Close</button>')}</div>`;
+      return;
+    }
+    const highlights = f.highlights.map(h => `
+      <div class="card highlight" data-id="${h.id}">
+        ${h.stance ? `<span class="stance-tag ${h.stance}">${h.stance === 'agree' ? 'Agree' : 'Disagree'}</span>` : ''}
+        <div class="quote">${esc(h.text.length > 200 ? h.text.slice(0, 200) + '…' : h.text)}</div>
+        <textarea data-hl-comment placeholder="Comment (optional)">${esc(h.comment)}</textarea>
+        <button class="link remove" data-remove-hl="${h.id}" title="Remove">&times;</button>
+      </div>`).join('');
+    const canSend = f.stance || f.highlights.length || f.comment.trim();
+    root.innerHTML = head('Share your view', back) + `
+      <div class="ext-body stack">
+        <div class="card info" style="margin:0">
+          <div class="label">Source attached</div>
+          <div style="font-weight:700; font-size:14px">${esc(ARTICLE.title)}</div>
+          <div class="small muted">${esc(ARTICLE.source)}</div>
+        </div>
+        <div>
+          <div class="label">Does this article match what you're seeing?</div>
+          <div class="stance">
+            <button class="agree ${f.stance === 'agree' ? 'on' : ''}" data-stance="agree">Agree</button>
+            <button class="disagree ${f.stance === 'disagree' ? 'on' : ''}" data-stance="disagree">Disagree</button>
+          </div>
+        </div>
+        <div>
+          <div class="label">Your highlights (${f.highlights.length})</div>
+          ${highlights || '<p class="small muted" style="margin:0">Select text in the article to agree, disagree or comment on it.</p>'}
+        </div>
+        <div>
+          <div class="label">Comments</div>
+          <textarea data-fb-comment placeholder="What does the article miss or get wrong? What are your sources saying?">${esc(f.comment)}</textarea>
+        </div>
+      </div>
+      <div class="ext-foot">
+        <span class="small muted" style="flex:1">Draft saved</span>
+        <button class="btn sm" data-send-feedback ${canSend ? '' : 'disabled'}>Send to ACAPS</button>
+      </div>`;
+    const sync = () => { $(root, '[data-send-feedback]').disabled = !(f.stance || f.highlights.length || f.comment.trim()); };
+    $(root, '[data-fb-comment]').oninput = e => { f.comment = e.target.value; sync(); };
+    $$(root, '.highlight').forEach(card => {
+      const h = f.highlights.find(x => x.id === card.dataset.id);
+      const box = $(card, '[data-hl-comment]');
+      box.oninput = () => { h.comment = box.value; };
+      if (focusId === h.id) setTimeout(() => box.focus(), 0);
+    });
+  }
+
+  // ---------- toast ----------
+  function renderToast() {
+    if (state.toast === 'gone') { toast.classList.add('hidden'); return; }
+    const top = `<div class="t-head">${PIN_TILE}<span class="chip">US military build-up in the…</span>
+      <button class="close" data-toast-close title="Dismiss">&times;</button></div>`;
+    toast.innerHTML = top + (state.toast === 'thanks'
+      ? `<div class="t-body"><b style="color:var(--green)">Thanks, sent to ACAPS.</b>
+          <div class="t-more"><button class="link" data-open-sidebar="feedback">Add details &rarr;</button></div></div>`
+      : `<div class="t-body">Does this article match what you're seeing?
+          <div class="t-actions">
+            <button class="btn agree sm" data-toast-stance="agree">Agree</button>
+            <button class="btn disagree sm" data-toast-stance="disagree">Disagree</button>
+          </div>
+          <div class="t-more">
+            <button class="link" data-open-sidebar="feedback">Share your view &rarr;</button>
+            ${surveyWaiting() ? '<button class="link" data-open-sidebar="survey">Take the survey &rarr;</button>' : ''}
+          </div></div>`);
+  }
+
+  // ---------- render everything ----------
+  function renderAll(focusId) {
+    document.getElementById('badge').hidden = !surveyWaiting();
+    document.getElementById('extBtn').classList.toggle('open', state.popupOpen);
+    popup.hidden = !state.popupOpen;
+    if (state.popupOpen) renderHome(popup, false);
+    sidebar.hidden = !state.sidebarView;
+    if (state.sidebarView === 'home') renderHome(sidebarRoot, true);
+    if (state.sidebarView === 'survey') renderSurvey(sidebarRoot);
+    if (state.sidebarView === 'feedback') renderFeedback(sidebarRoot, focusId);
+    if (!toast.classList.contains('hidden') || state.toast === 'gone') renderToast();
+  }
+
+  function openSidebar(view, focusId) {
+    state.sidebarView = view;
+    state.popupOpen = false;
+    if (state.toast === 'ask' && view !== 'home') hideToast();
+    renderAll(focusId);
+  }
+
+  function hideToast() {
+    state.toast = 'gone';
+    toast.classList.add('hidden');
+  }
+
+  // ---------- selecting article text ----------
+  let range = null;
+
+  page.addEventListener('mouseup', e => {
+    if (selbar.contains(e.target)) return;
+    setTimeout(() => {
+      const sel = window.getSelection();
+      if (!sel.rangeCount || sel.isCollapsed || sel.toString().trim().length < 3 || !document.getElementById('article').contains(sel.anchorNode)) {
+        selbar.hidden = true;
+        return;
+      }
+      range = sel.getRangeAt(0).cloneRange();
+      const r = range.getBoundingClientRect();
+      const p = page.getBoundingClientRect();
+      selbar.hidden = false;
+      const w = selbar.offsetWidth;
+      const left = Math.min(Math.max(8, r.left - p.left + r.width / 2 - w / 2), page.clientWidth - w - 8);
+      selbar.style.left = left + 'px';
+      selbar.style.top = Math.max(4, r.top - p.top + page.scrollTop - selbar.offsetHeight - 8) + 'px';
+    }, 0);
+  });
+  page.addEventListener('mousedown', e => { if (!selbar.contains(e.target)) selbar.hidden = true; });
+
+  function markSelection(stance) {
+    if (!range) return;
+    const text = range.toString().trim();
+    const id = 'h' + Date.now().toString(36);
+    const mark = document.createElement('mark');
+    mark.className = 'acaps-hl' + (stance ? ' ' + stance : '');
+    mark.dataset.id = id;
+    try { range.surroundContents(mark); } catch (_) { mark.appendChild(range.extractContents()); range.insertNode(mark); }
+    window.getSelection().removeAllRanges();
+    range = null;
+    selbar.hidden = true;
+    state.feedback.sent = false;
+    state.feedback.highlights.push({ id, text, stance, comment: '' });
+    openSidebar('feedback', stance ? null : id);
+  }
+
+  function unmark(id) {
+    const m = document.querySelector(`mark.acaps-hl[data-id="${id}"]`);
+    if (m) m.replaceWith(...m.childNodes);
+  }
+
+  // ---------- clicks ----------
+  document.addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (!b) {
+      // Clicking the page closes the popup, like a real browser.
+      if (state.popupOpen && !popup.contains(e.target)) { state.popupOpen = false; renderAll(); }
+      return;
+    }
+    const d = b.dataset;
+    if ('reset' in d) return location.reload();
+    if ('togglePopup' in d) { state.popupOpen = !state.popupOpen; return renderAll(); }
+    if ('toggleSidebar' in d) { state.sidebarView = state.sidebarView ? null : 'home'; state.popupOpen = false; return renderAll(); }
+    if (d.openSidebar) return openSidebar(d.openSidebar);
+    if ('sendNote' in d) { state.noteSent = true; state.noteDraft = ''; return renderAll(); }
+    if ('noteAgain' in d) { state.noteSent = false; return renderAll(); }
+    if (d.contact) { state.contact = d.contact; return renderAll(); }
+    if ('context' in d) { state.survey.showContext = !state.survey.showContext; return renderAll(); }
+    if (d.answer) return answerSurvey(d.answer);
+    if (d.step) return stepSurvey(Number(d.step));
+    if (d.stance) {
+      state.feedback.stance = state.feedback.stance === d.stance ? null : d.stance;
+      return renderAll();
+    }
+    if (d.removeHl) {
+      unmark(d.removeHl);
+      state.feedback.highlights = state.feedback.highlights.filter(h => h.id !== d.removeHl);
+      return renderAll();
+    }
+    if ('sendFeedback' in d) {
+      state.feedback = { stance: null, comment: '', highlights: [], sent: true };
+      return renderAll();
+    }
+    if ('feedbackAgain' in d) { state.feedback.sent = false; return openSidebar('home'); }
+    if (d.sel) return markSelection(d.sel === 'comment' ? null : d.sel);
+    if ('toastClose' in d) return hideToast();
+    if (d.toastStance) {
+      state.toast = 'thanks';
+      renderToast();
+      setTimeout(() => { if (state.toast === 'thanks') hideToast(); }, 5000);
+    }
+  });
+
+  // ---------- start ----------
+  document.getElementById('pinWhite').innerHTML = PIN('#fff');
+  $(selbar, '[data-pin]').innerHTML = PIN('#fff');
+  renderAll();
+  // The article is recognised: the toast fades in after a moment, like in the real extension.
+  setTimeout(() => { renderToast(); toast.classList.remove('hidden'); }, 1500);
+})();
+</script>
+</body>
+</html>

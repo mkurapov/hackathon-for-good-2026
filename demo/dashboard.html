@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ground Truth | Analyst dashboard (mock)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Roboto+Condensed:wght@300;400;600;700&display=swap" rel="stylesheet">
+<!--
+  Static mock of the analyst dashboard (analyst-dashboard/). No backend: all data below is made up
+  and lives in memory, so reloading the page resets it.
+-->
+<style>
+  :root {
+    --ink: #212121; --muted: #70777b; --line: #e0e4e6; --canvas: #f3f5f6; --paper: #fff;
+    --navy: #003c60; --blue: #004b78; --cyan: #0096ba; --green: #4d8c5a; --amber: #bf7a1b; --red: #c74949;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--canvas); color: var(--ink); font-family: "Roboto Condensed", sans-serif; font-size: 15px; }
+  button, input, select, textarea { font: inherit; }
+  h1, h2, h3, p { margin-top: 0; }
+
+  .demo-note { background: #fdf3e1; border-bottom: 1px solid #f3dcae; padding: 6px 16px; font-size: 13px; text-align: center; }
+  .demo-note a { color: var(--blue); font-weight: 700; }
+
+  .shell { display: flex; min-height: calc(100vh - 31px); }
+  .side { width: 232px; flex: 0 0 232px; background: var(--navy); color: #fff; display: flex; flex-direction: column; padding: 0 14px; }
+  .brand { padding: 22px 10px 18px; border-bottom: 1px solid rgba(255,255,255,.16); }
+  .brand-name { font-family: "Bebas Neue", sans-serif; font-size: 34px; line-height: .95; letter-spacing: 1px; }
+  .brand-name span { color: #35bad1; }
+  .brand-caption { margin-top: 6px; font-size: 12px; color: #b7d6e2; }
+  .ws-label { padding: 24px 12px 9px; color: #82a8bb; font-size: 10px; font-weight: 700; letter-spacing: 1.1px; }
+  .nav { display: flex; flex-direction: column; gap: 3px; }
+  .nav button { width: 100%; min-height: 42px; display: flex; align-items: center; gap: 11px; text-align: left; padding: 0 12px; background: transparent; border: 0; border-radius: 3px; color: #d3e2e8; cursor: pointer; font-size: 14px; }
+  .nav button:hover { background: rgba(255,255,255,.1); color: #fff; }
+  .nav button.active { color: #fff; background: #07577d; box-shadow: inset 3px 0 #28bad1; }
+  .nav button:disabled { opacity: .45; cursor: default; background: transparent; }
+  .nav .icon { width: 18px; color: #a4dbea; font-size: 19px; text-align: center; }
+  .nav .count { margin-left: auto; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: #c64b48; color: #fff; display: grid; place-items: center; font-size: 11px; font-weight: 700; }
+  .side-bottom { margin-top: auto; }
+  .privacy { display: flex; gap: 9px; margin: 0 5px 15px; padding: 11px 9px; border: 1px solid rgba(255,255,255,.16); border-radius: 3px; color: #e0edf1; font-size: 12px; line-height: 1.35; }
+  .privacy small { color: #9cbac7; font-size: 11px; }
+  .privacy .dot { color: #45c2b0; font-size: 11px; }
+  .analyst { margin: 0 -14px; border-top: 1px solid rgba(255,255,255,.16); padding: 12px 18px; display: flex; align-items: center; gap: 10px; }
+  .avatar { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 700; background: #d4e9ec; color: var(--navy); flex: none; }
+  .analyst strong, .analyst small { display: block; }
+  .analyst strong { font-size: 13px; font-weight: 600; }
+  .analyst small { color: #a9c5d0; font-size: 11px; }
+
+  .main { flex: 1; min-width: 0; }
+  .topbar { height: 62px; display: flex; align-items: center; gap: 12px; padding: 0 34px; background: #fff; border-bottom: 1px solid var(--line); }
+  .crumb { color: #8a9093; font-size: 13px; white-space: nowrap; }
+  .crumb strong { color: #33393c; font-weight: 600; margin-left: 8px; }
+  .tools { margin-left: auto; display: flex; align-items: center; gap: 9px; min-width: 0; }
+  .tools label { font-size: 10px; color: #80898e; font-weight: 700; letter-spacing: .7px; }
+  .tools select { height: 34px; border: 1px solid #d5dcdf; border-radius: 3px; background: #fff; color: var(--navy); font-size: 13px; font-weight: 700; padding: 5px 9px; }
+  .risk-title { max-width: 340px; color: #5a666b; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 31px 38px 56px; }
+  .view { display: none; }
+  .view.active { display: block; }
+  .heading { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; margin-bottom: 25px; flex-wrap: wrap; }
+  .eyebrow { color: #768187; font-size: 10px; letter-spacing: .85px; font-weight: 700; margin: 0 0 7px; }
+  .heading h1 { margin: 0; color: #173c50; font-family: "Bebas Neue", sans-serif; font-size: 32px; line-height: 1; font-weight: 400; }
+  .subtitle { color: #727c81; font-size: 14px; margin: 7px 0 0; }
+
+  .btn { display: inline-flex; align-items: center; gap: 7px; min-height: 36px; border-radius: 3px; padding: 7px 12px; cursor: pointer; font-size: 13px; font-weight: 700; background: var(--blue); border: 1px solid var(--blue); color: #fff; }
+  .btn:hover { background: var(--navy); }
+  .btn.secondary { background: #fff; border-color: #cbd5da; color: var(--blue); }
+  .btn.secondary:hover { background: #f0f6f8; }
+  .btn.sm { min-height: 30px; padding: 5px 9px; font-size: 12px; }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .text-action { border: 0; background: none; padding: 5px 0; color: var(--cyan); font-weight: 700; font-size: 13px; cursor: pointer; }
+
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 4px; padding: 22px 24px; }
+  .grid-2 { display: grid; grid-template-columns: 1.1fr 1fr; gap: 16px; }
+  .kicker { color: #768187; font-size: 10px; letter-spacing: .85px; font-weight: 700; display: flex; gap: 8px; align-items: center; }
+  .card h2 { color: #273f4b; font-size: 22px; font-weight: 600; margin: 8px 0 6px; }
+  .card p { color: #5f6a6f; }
+  .survey-mark { display: flex; gap: 28px; margin-top: 18px; }
+  .survey-mark div { font-size: 30px; font-weight: 600; color: var(--blue); }
+  .survey-mark small { display: block; font-size: 10px; letter-spacing: .8px; color: var(--muted); font-weight: 700; }
+
+  .badge { display: inline-flex; align-items: center; min-height: 22px; padding: 3px 7px; border-radius: 2px; font-size: 10px; font-weight: 700; }
+  .badge::before { content: ""; width: 5px; height: 5px; margin-right: 5px; border-radius: 50%; background: currentColor; }
+  .b-draft, .b-invited, .b-awaiting { color: #a06716; background: #fcf1df; }
+  .b-published, .b-onboarded { color: #417d53; background: #eaf3eb; }
+  .b-responded { color: #147d94; background: #e6f4f6; }
+  .b-new { color: #b03d3b; background: #faeaea; }
+  .b-reviewed { color: #6b767b; background: #eef1f2; }
+
+  .latest { display: flex; flex-direction: column; margin-top: 12px; }
+  .latest button { display: flex; align-items: center; gap: 12px; padding: 11px 4px; border: 0; border-top: 1px solid #edf0f1; background: none; text-align: left; cursor: pointer; }
+  .latest button:hover { background: #f7fafb; }
+  .latest strong { display: block; font-size: 13px; color: #2f424b; }
+  .latest small { display: block; color: #79858a; font-size: 12px; }
+  .latest time { margin-left: auto; font-size: 11px; color: var(--red); font-weight: 700; white-space: nowrap; }
+  .initial { width: 29px; height: 29px; border-radius: 50%; display: grid; place-items: center; background: #e5f0f3; color: #205970; font-size: 10px; font-weight: 700; flex: none; }
+  .initial.b { background: #f4eadb; color: #96601f; }
+
+  .table-scroll { overflow-x: auto; border: 1px solid var(--line); background: #fff; }
+  table { width: 100%; border-collapse: collapse; text-align: left; white-space: nowrap; }
+  th { height: 37px; background: #f7f9fa; color: #778187; font-size: 10px; letter-spacing: .55px; font-weight: 700; text-transform: uppercase; border-bottom: 1px solid var(--line); padding: 0 12px; }
+  td { height: 53px; padding: 8px 12px; color: #404b50; font-size: 13px; border-bottom: 1px solid #edf0f1; }
+  tr:last-child td { border-bottom: 0; }
+  .name { display: flex; align-items: center; gap: 9px; }
+  .name strong { font-weight: 600; color: #2f424b; }
+  .name small { display: block; color: #8c969a; font-size: 10px; }
+  .mono { font-family: ui-monospace, Menlo, monospace; font-size: 12px; color: #59676d; }
+  .type { font-size: 11px; font-weight: 700; color: #3c606c; }
+  .type.b { color: #86602b; }
+
+  .q-list { display: flex; flex-direction: column; gap: 10px; }
+  .q-item { display: flex; gap: 14px; align-items: flex-start; background: #fff; border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; }
+  .q-kind { flex: none; width: 62px; font-size: 10px; font-weight: 700; letter-spacing: .6px; color: var(--cyan); padding-top: 3px; }
+  .q-kind.binary { color: var(--amber); }
+  .q-item textarea { flex: 1; border: 1px solid transparent; border-radius: 3px; padding: 4px 6px; resize: vertical; min-height: 44px; color: #2f424b; background: transparent; }
+  .q-item textarea:hover:not([readonly]) { border-color: var(--line); }
+  .q-item textarea:focus { outline: 2px solid rgba(0,150,186,.3); border-color: var(--cyan); background: #fff; }
+  .q-item .remove { border: 0; background: none; color: #9aa4a8; font-size: 20px; cursor: pointer; }
+  .q-dim { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .answers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 14px; }
+  .answer h3 { font-size: 15px; font-weight: 600; color: #2f424b; line-height: 1.35; margin-bottom: 14px; }
+  .bar { height: 10px; border-radius: 5px; background: #edf1f2; overflow: hidden; display: flex; }
+  .bar span { display: block; height: 100%; }
+  .bar .yes { background: var(--green); }
+  .bar .no { background: var(--red); }
+  .bar .mean { background: var(--cyan); }
+  .bar-legend { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .answer blockquote { margin: 12px 0 0; padding: 6px 10px; border-left: 3px solid var(--cyan); background: #f7f9fa; font-size: 13px; font-style: italic; color: #4c585d; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); background: #fff; border: 1px solid var(--line); border-radius: 4px; margin-bottom: 22px; }
+  .stats div { padding: 16px 20px; border-right: 1px solid var(--line); font-size: 12px; color: #657177; }
+  .stats div:last-child { border-right: 0; }
+  .stats strong { display: block; font-size: 27px; color: #233d4b; font-weight: 600; margin-top: 4px; }
+
+  .tabs { display: flex; gap: 4px; margin-bottom: 14px; }
+  .tabs button { min-height: 32px; padding: 5px 12px; border: 1px solid transparent; border-radius: 3px; background: transparent; color: #748087; font-size: 13px; cursor: pointer; }
+  .tabs button.on { border-color: #d7e7ec; background: #edf6f8; color: var(--blue); font-weight: 700; }
+  .feed { display: flex; flex-direction: column; gap: 10px; }
+  .feed-item { background: #fff; border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 4px; padding: 14px 16px; }
+  .feed-item.unreviewed { border-left-color: var(--cyan); }
+  .feed-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 13px; color: #79858a; }
+  .feed-head strong { color: #2f424b; }
+  .feed-head .spacer { flex: 1; }
+  .feed-item p { margin: 0 0 10px; line-height: 1.45; }
+  .feed-item .quote { margin: 0 0 8px; padding: 6px 10px; border-left: 3px solid var(--cyan); background: #f7f9fa; font-style: italic; font-size: 14px; }
+  .feed-item .quote.agree { border-left-color: var(--green); }
+  .feed-item .quote.disagree { border-left-color: var(--red); }
+  .article-link { font-weight: 700; color: var(--blue); font-size: 14px; }
+  .source { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+  .stance { font-size: 11px; font-weight: 700; color: #fff; border-radius: 9px; padding: 1px 7px; }
+  .stance.agree { background: var(--green); }
+  .stance.disagree { background: var(--red); }
+  .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: #e6edf2; color: var(--blue); font-weight: 700; }
+  .reply { margin-top: 10px; padding: 8px 10px; background: #eaf3eb; border-radius: 3px; font-size: 13px; color: #36643f; }
+  .feed-actions { display: flex; gap: 8px; margin-top: 10px; }
+  .reply-box { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+  textarea.input, input.input, select.input { width: 100%; border: 1px solid #d5dcdf; border-radius: 3px; padding: 8px 10px; background: #fff; }
+  textarea.input { min-height: 80px; resize: vertical; }
+
+  .form { display: grid; gap: 12px; max-width: 620px; }
+  .form label { font-size: 11px; font-weight: 700; letter-spacing: .6px; color: #657177; display: block; margin-bottom: 4px; }
+  .sent-list { margin-top: 30px; }
+
+  .toasts { position: fixed; right: 20px; bottom: 20px; display: flex; flex-direction: column; gap: 8px; z-index: 10; }
+  .toast { background: #233d4b; color: #fff; padding: 10px 14px; border-radius: 3px; font-size: 13px; box-shadow: 0 4px 14px rgba(0,0,0,.2); }
+
+  @media (max-width: 860px) {
+    .shell { flex-direction: column; }
+    .side { width: auto; flex: none; padding-bottom: 8px; }
+    .brand { padding: 14px 10px; }
+    .ws-label, .side-bottom { display: none; }
+    .nav { flex-direction: row; overflow-x: auto; }
+    .nav button { width: auto; white-space: nowrap; }
+    .topbar { padding: 0 16px; height: auto; min-height: 62px; flex-wrap: wrap; padding-block: 10px; }
+    .risk-title { display: none; }
+    .wrap { padding: 22px 16px 40px; }
+    .grid-2, .stats { grid-template-columns: 1fr; }
+    .stats div { border-right: 0; border-bottom: 1px solid var(--line); }
+    .answers-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="demo-note">Mock analyst dashboard with made-up data. Nothing is saved. See also the <a href="extension.html">expert extension mock</a>.</div>
+
+<div class="shell">
+  <aside class="side">
+    <div class="brand"><div class="brand-name">ACAPS<span>.</span></div><div class="brand-caption">Analyst workspace</div></div>
+    <div class="ws-label">WORKSPACE</div>
+    <nav class="nav" id="nav"></nav>
+    <div class="side-bottom">
+      <div class="privacy"><span class="dot">●</span><span>Internal analyst view<br><small>Contributor privacy protected</small></span></div>
+      <div class="analyst"><div class="avatar">AM</div><div><strong>Alex Morgan</strong><small>Field analyst</small></div></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="crumb">Workspace / <strong id="crumb">Overview</strong></div>
+      <div class="tools">
+        <label for="country">COUNTRY</label>
+        <select id="country"><option>Venezuela</option></select>
+        <label for="risk">RISK PROFILE</label>
+        <select id="risk"><option>R1011</option></select>
+        <div class="risk-title" id="riskTitle"></div>
+      </div>
+    </header>
+    <div class="wrap" id="view"></div>
+  </main>
+</div>
+<div class="toasts" id="toasts"></div>
+
+<script>
+(() => {
+  // ---------- made-up data (questions match backend/seed_demo.py) ----------
+  const RISK = {
+    code: 'R1011',
+    title: 'US military build-up in the Caribbean triggers internal destabilisation in Venezuela and heightens humanitarian needs',
+    basedOnUpdate: '01/04/2026',
+  };
+  const VIEWS = [
+    { id: 'overview', label: 'Overview', icon: '⌂' },
+    { id: 'experts', label: 'Expert panel', icon: '◎' },
+    { id: 'survey', label: 'New survey', icon: '▤', title: 'Survey review' },
+    { id: 'answers', label: 'Survey answers', icon: '◫' },
+    { id: 'feedback', label: 'Tips inbox', icon: '▧' },
+    { id: 'notifications', label: 'Send mass notification', icon: '↗' },
+  ];
+  const DIM_LABELS = {
+    likelihood: ['Very unlikely', 'Very likely'], urgency: ['Not urgent', 'Very urgent'], scale: ['Low', 'High'],
+  };
+
+  const state = {
+    view: 'overview',
+    tab: 'tips',
+    replyingTo: null,
+    survey: {
+      status: 'Draft',
+      questions: [
+        { id: 'B1', kind: 'binary', text: 'Is there organised resistance from former Chavista loyalists against the new cabinet where you are?' },
+        { id: 'B2', kind: 'binary', text: 'Are rural food supply chains in Venezuela working well enough to prevent a rise in acute malnutrition?' },
+        { id: 'B3', kind: 'binary', text: 'Are released opposition leaders in Venezuela able to operate freely, without house arrest or monitoring?' },
+        { id: 'B4', kind: 'binary', text: 'Are displaced people in high-risk areas of Venezuela returning home voluntarily, without pressure from the authorities?' },
+        { id: 'B5', kind: 'binary', text: "Has the US naval presence off Venezuela's coast made it harder to deliver humanitarian aid?" },
+        { id: 'L1', kind: 'likert', dimension: 'likelihood', text: 'How likely is it that military units in Venezuela turn against the new cabinet in the next three months?' },
+        { id: 'L2', kind: 'likert', dimension: 'urgency', text: 'How urgent is the lack of food and healthcare for rural communities in high-risk areas of Venezuela, compared to early 2026?' },
+        { id: 'L3', kind: 'likert', dimension: 'likelihood', text: 'How likely is it that recently released opposition leaders in Venezuela are still under surveillance or pressure?' },
+        { id: 'L4', kind: 'likert', dimension: 'scale', text: "How strong is local resistance to the new policies in Venezuela's border regions?" },
+        { id: 'L5', kind: 'likert', dimension: 'likelihood', text: 'How likely is it that state services collapse in parts of Venezuela in the next quarter because of armed group activity?' },
+      ],
+    },
+    experts: [
+      { alias: 'Health worker, Zulia', type: 'A', code: 'DEMO2', used: true, status: 'Onboarded', activity: '2 hours ago', expertise: 'Health, nutrition' },
+      { alias: 'Logistics officer, Táchira', type: 'A', code: 'DEMO3', used: true, status: 'Onboarded', activity: 'Yesterday', expertise: 'Access, border' },
+      { alias: 'Journalist, Caracas', type: 'A', code: 'DEMO4', used: true, status: 'Onboarded', activity: '3 days ago', expertise: 'Politics, security' },
+      { alias: 'Contributor 8k2f', type: 'B', code: 'DEMO1', used: true, status: 'Onboarded', activity: '5 hours ago', expertise: '' },
+      { alias: 'Contributor q7ma', type: 'B', code: 'DEMO1', used: true, status: 'Onboarded', activity: '1 week ago', expertise: '' },
+      { alias: 'Church network lead, Apure', type: 'A', code: 'DEMO5', used: false, status: 'Invited', activity: 'Invited 1 day ago', expertise: 'Displacement' },
+    ],
+    tips: [
+      { id: 't1', handle: 'Health worker, Zulia', type: 'A', when: '2 hours ago', status: 'unreviewed', tags: ['health', 'supply'],
+        body: 'Two clinics outside Maracaibo ran out of insulin this week. Staff say the regional depot has stock but no fuel for deliveries.' },
+      { id: 't2', handle: 'Contributor 8k2f', type: 'B', when: '5 hours ago', status: 'unreviewed', tags: ['security'],
+        body: 'Checkpoints on the road to San Cristóbal were doubled on Monday. Soldiers are asking for papers from aid trucks that used to pass freely.' },
+      { id: 't3', handle: 'Logistics officer, Táchira', type: 'A', when: 'Yesterday', status: 'reviewed', tags: ['access'],
+        body: 'Border crossing at Ureña reopened for pedestrians in the mornings only. Queues of several hundred people by 7am.',
+        reply: 'Thanks, this matches what we heard from OCHA. Could you let us know if vehicle crossings resume?' },
+    ],
+    comments: [
+      { id: 'c1', handle: 'Journalist, Caracas', type: 'A', when: '3 hours ago', status: 'unreviewed', stance: 'disagree',
+        title: 'Venezuela\'s new cabinet promises calm as released prisoners return home', source: 'meridian-news.example',
+        quote: 'Officials say all released opposition figures are free to travel and speak publicly.',
+        comment: 'At least three of the people released in Caracas still report weekly to SEBIN and cannot leave the city.' },
+      { id: 'c2', handle: 'Health worker, Zulia', type: 'A', when: 'Yesterday', status: 'reviewed', stance: 'agree',
+        title: 'Rural clinics strain under fuel shortages', source: 'meridian-news.example',
+        quote: 'Health posts in rural Zulia report patients travelling up to six hours for basic care.',
+        comment: 'Accurate for the south of the state. In the north it is closer to two to three hours.' },
+    ],
+    notifications: [
+      { subject: 'Welcome to the Venezuela expert panel', audience: 'all', count: 5, when: '1 week ago' },
+    ],
+  };
+
+  // Made-up answers, shown once the survey is published.
+  const ANSWERS = {
+    B1: { yes: 1, no: 3, comments: ['Not organised. Some grumbling among older officers in Maracay.'] },
+    B2: { yes: 1, no: 4, comments: ['Fuel is the bottleneck, not food stock.'] },
+    B3: { yes: 0, no: 4, comments: ['Several still report weekly to intelligence services.'] },
+    B4: { yes: 2, no: 2, comments: [] },
+    B5: { yes: 3, no: 1, comments: ['Port inspections in Puerto Cabello add about a week.'] },
+    L1: { mean: 2.2, comments: [] },
+    L2: { mean: 4.4, comments: ['Insulin and antibiotics are the most acute gaps.'] },
+    L3: { mean: 4.0, comments: [] },
+    L4: { mean: 2.8, comments: [] },
+    L5: { mean: 3.1, comments: ['Armed groups already run the water supply in parts of Apure.'] },
+  };
+
+  // ---------- helpers ----------
+  const $ = sel => document.querySelector(sel);
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const initials = name => name.split(/[\s,]+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+  const unreviewed = () => state.tips.filter(t => t.status === 'unreviewed').length + state.comments.filter(c => c.status === 'unreviewed').length;
+  const published = () => state.survey.status === 'Published';
+
+  function toast(message) {
+    const el = document.createElement('div');
+    el.className = 'toast';
+    el.textContent = message;
+    $('#toasts').appendChild(el);
+    setTimeout(() => el.remove(), 3200);
+  }
+
+  function go(view) {
+    state.view = view;
+    state.replyingTo = null;
+    render();
+    window.scrollTo({ top: 0 });
+  }
+
+  // ---------- views ----------
+  function renderNav() {
+    $('#nav').innerHTML = VIEWS.map(v => `
+      <button data-go="${v.id}" class="${state.view === v.id ? 'active' : ''}" ${v.id === 'answers' && !published() ? 'disabled title="Available after survey publication"' : ''}>
+        <span class="icon">${v.icon}</span>${v.label}
+        ${v.id === 'feedback' && unreviewed() ? `<span class="count">${unreviewed()}</span>` : ''}
+      </button>`).join('');
+    const v = VIEWS.find(x => x.id === state.view);
+    $('#crumb').textContent = v.title || v.label;
+  }
+
+  function heading(title, subtitle = '', actions = '') {
+    return `<div class="heading"><div><p class="eyebrow">ACTIVE RISK ${RISK.code}</p><h1>${title}</h1>
+      ${subtitle ? `<p class="subtitle">${subtitle}</p>` : ''}</div><div>${actions}</div></div>`;
+  }
+
+  function overview() {
+    const qs = state.survey.questions;
+    const latest = [...state.tips].sort((a, b) => (b.status === 'unreviewed') - (a.status === 'unreviewed')).slice(0, 3);
+    return heading('Overview') + `
+      <div class="grid-2">
+        <article class="card">
+          <div class="kicker">NEW SURVEY <span class="badge ${published() ? 'b-published' : 'b-draft'}">${state.survey.status}</span></div>
+          <h2>${published() ? 'Survey published · 5 responses' : 'Questions ready for your review'}</h2>
+          <p>${qs.length} questions based on the latest report update, <strong>${RISK.basedOnUpdate}</strong>.</p>
+          <button class="btn" data-go="${published() ? 'answers' : 'survey'}">${published() ? 'See answers' : 'Review survey'} →</button>
+          <div class="survey-mark">
+            <div>${qs.filter(q => q.kind === 'likert').length}<small>LIKERT</small></div>
+            <div>${qs.filter(q => q.kind === 'binary').length}<small>YES / NO</small></div>
+          </div>
+        </article>
+        <article class="card">
+          <div class="kicker" style="justify-content:space-between">LATEST VOLUNTARY INFORMATION
+            <button class="text-action" data-go="feedback">View tips →</button></div>
+          <h2>New input to review: ${unreviewed()}</h2>
+          <div class="latest">${latest.map(t => `
+            <button data-go="feedback">
+              <span class="initial ${t.type === 'B' ? 'b' : ''}">${initials(t.handle)}</span>
+              <span><strong>${esc(t.handle)}</strong><small>${esc(t.body.slice(0, 80))}…</small></span>
+              <time>${t.status === 'unreviewed' ? 'NEW' : ''}</time>
+            </button>`).join('')}</div>
+        </article>
+      </div>`;
+  }
+
+  function experts() {
+    const statusClass = s => ({ Invited: 'b-invited', Onboarded: 'b-onboarded', 'Awaiting response': 'b-awaiting', Responded: 'b-responded' }[s]);
+    return heading('Expert panel', `${state.experts.length} experts on ${RISK.code}. Type A experts are invited by ACAPS; type B joined with a shared code.`,
+      '<button class="btn" data-add-expert>+ Add expert</button>') + `
+      <div class="table-scroll"><table>
+        <thead><tr><th>Expert</th><th>Type</th><th>Invite code</th><th>Status</th><th>Last activity</th></tr></thead>
+        <tbody>${state.experts.map(e => `
+          <tr>
+            <td><div class="name"><span class="initial ${e.type === 'B' ? 'b' : ''}">${initials(e.alias)}</span>
+              <div><strong>${esc(e.alias)}</strong><small>${esc(e.expertise || 'No expertise recorded')}</small></div></div></td>
+            <td><span class="type ${e.type === 'B' ? 'b' : ''}">Type ${e.type}</span></td>
+            <td><span class="mono">${e.code}</span> <small style="color:${e.used ? 'var(--green)' : 'var(--amber)'}">${e.used ? 'used' : 'unused'}</small></td>
+            <td><span class="badge ${statusClass(e.status)}">${e.status}</span></td>
+            <td style="color:#79858a">${e.activity}</td>
+          </tr>`).join('')}</tbody>
+      </table></div>`;
+  }
+
+  function survey() {
+    const ro = published();
+    const subtitle = ro
+      ? `Published to ${state.experts.filter(e => e.used).length} experts. Published surveys can no longer be edited.`
+      : `Drafted from the ACAPS update of ${RISK.basedOnUpdate}. Edit, remove or add questions, then publish.`;
+    const actions = ro ? '<span class="badge b-published">Published</span>' : `
+      <button class="btn secondary" data-add-q="binary">+ Yes / No</button>
+      <button class="btn secondary" data-add-q="likert">+ Scale 1-5</button>
+      <button class="btn" data-publish>Publish survey</button>`;
+    return heading('Survey review', subtitle, actions) + `
+      <div class="q-list">${state.survey.questions.map((q, i) => `
+        <div class="q-item">
+          <div class="q-kind ${q.kind}">${q.kind === 'binary' ? 'YES / NO' : 'SCALE 1-5'}${q.dimension ? `<div class="q-dim">${q.dimension}</div>` : ''}</div>
+          <textarea data-q="${i}" ${ro ? 'readonly' : ''} rows="2">${esc(q.text)}</textarea>
+          ${ro ? '' : `<button class="remove" data-remove-q="${i}" title="Remove question">×</button>`}
+        </div>`).join('')}</div>`;
+  }
+
+  function answers() {
+    const cards = state.survey.questions.map(q => {
+      const a = ANSWERS[q.id] || { yes: 0, no: 0, mean: null, comments: [] };
+      let chart;
+      if (q.kind === 'binary') {
+        const total = a.yes + a.no || 1;
+        chart = `<div class="bar"><span class="yes" style="width:${a.yes / total * 100}%"></span><span class="no" style="width:${a.no / total * 100}%"></span></div>
+          <div class="bar-legend"><span>Yes ${a.yes}</span><span>No ${a.no}</span></div>`;
+      } else {
+        const [lo, hi] = DIM_LABELS[q.dimension] || ['Low', 'High'];
+        chart = a.mean == null ? '<p class="subtitle">No answers yet.</p>' : `
+          <div class="bar"><span class="mean" style="width:${(a.mean - 1) / 4 * 100}%"></span></div>
+          <div class="bar-legend"><span>${lo}</span><strong style="color:var(--blue)">Average ${a.mean.toFixed(1)} / 5</strong><span>${hi}</span></div>`;
+      }
+      return `<article class="card answer"><h3>${esc(q.text)}</h3>${chart}
+        ${a.comments.map(c => `<blockquote>${esc(c)}</blockquote>`).join('')}</article>`;
+    }).join('');
+    return heading('Survey answers', 'Results from the published survey. Individual answers are never shown.') + `
+      <div class="stats">
+        <div>Responses<strong>5</strong></div>
+        <div>Panel size<strong>${state.experts.filter(e => e.used).length}</strong></div>
+        <div>Response rate<strong>100%</strong></div>
+      </div>
+      <div class="answers-grid">${cards}</div>`;
+  }
+
+  function feedback() {
+    const tabs = `<div class="tabs">
+      <button data-tab="tips" class="${state.tab === 'tips' ? 'on' : ''}">Open text tips (${state.tips.length})</button>
+      <button data-tab="comments" class="${state.tab === 'comments' ? 'on' : ''}">Article comments (${state.comments.length})</button>
+    </div>`;
+    const status = s => `<span class="badge ${s === 'unreviewed' ? 'b-new' : 'b-reviewed'}">${s === 'unreviewed' ? 'New' : 'Reviewed'}</span>`;
+    const head = (item, extra = '') => `<div class="feed-head">
+      <span class="initial ${item.type === 'B' ? 'b' : ''}">${initials(item.handle)}</span>
+      <strong>${esc(item.handle)}</strong><span>Type ${item.type} · ${item.when}</span>${extra}<span class="spacer"></span>${status(item.status)}</div>`;
+
+    const tips = state.tips.map(t => `
+      <div class="feed-item ${t.status}">
+        ${head(t)}
+        <p>${esc(t.body)}</p>
+        <div class="tags">${t.tags.map(x => `<span class="tag">${esc(x)}</span>`).join('')}</div>
+        ${t.reply ? `<div class="reply"><strong>Your reply:</strong> ${esc(t.reply)}</div>` : ''}
+        ${state.replyingTo === t.id ? `
+          <div class="reply-box">
+            <textarea class="input" data-reply-text placeholder="Reply to the expert. It is sent through ACAPS, so their identity stays protected."></textarea>
+            <div class="feed-actions"><button class="btn sm" data-send-reply="${t.id}">Send reply</button>
+            <button class="btn secondary sm" data-cancel-reply>Cancel</button></div>
+          </div>` : `
+          <div class="feed-actions">
+            ${t.status === 'unreviewed' ? `<button class="btn sm" data-review-tip="${t.id}">Mark reviewed</button>` : ''}
+            ${t.reply ? '' : `<button class="btn secondary sm" data-reply="${t.id}">Reply</button>`}
+          </div>`}
+      </div>`).join('');
+
+    const comments = state.comments.map(c => `
+      <div class="feed-item ${c.status}">
+        ${head(c, c.stance ? `<span class="stance ${c.stance}">${c.stance === 'agree' ? 'Agrees' : 'Disagrees'}</span>` : '')}
+        <div class="article-link">${esc(c.title)}</div>
+        <div class="source">${esc(c.source)} · ${RISK.code}</div>
+        ${c.quote ? `<div class="quote ${c.stance || ''}">“${esc(c.quote)}”</div>` : ''}
+        <p>${esc(c.comment || 'No additional comment provided.')}</p>
+        ${c.status === 'unreviewed' ? `<div class="feed-actions"><button class="btn sm" data-review-comment="${c.id}">Mark reviewed</button></div>` : ''}
+      </div>`).join('');
+
+    return heading('Tips inbox', 'Information experts sent on their own, and their comments on news articles.') + tabs +
+      `<div class="feed">${state.tab === 'tips' ? tips : comments}</div>`;
+  }
+
+  function notifications() {
+    return heading('Send mass notification', 'Delivery is simulated in this prototype.') + `
+      <div class="card"><div class="form">
+        <div><label for="n-aud">AUDIENCE</label>
+          <select class="input" id="n-aud"><option value="all">All experts on ${RISK.code}</option><option value="A">Type A only</option><option value="B">Type B only</option></select></div>
+        <div><label for="n-sub">SUBJECT</label><input class="input" id="n-sub" maxlength="100" placeholder="New survey on the situation in Venezuela"></div>
+        <div><label for="n-body">MESSAGE</label><textarea class="input" id="n-body" maxlength="500" placeholder="A short message to the panel"></textarea></div>
+        <div><button class="btn" data-send-notification>Queue notification</button></div>
+      </div></div>
+      <div class="sent-list">
+        <p class="eyebrow">SENT</p>
+        <div class="table-scroll"><table>
+          <thead><tr><th>Subject</th><th>Audience</th><th>Recipients</th><th>Sent</th></tr></thead>
+          <tbody>${state.notifications.map(n => `<tr><td>${esc(n.subject)}</td><td>${n.audience === 'all' ? 'All' : 'Type ' + n.audience}</td><td>${n.count}</td><td>${n.when}</td></tr>`).join('')}</tbody>
+        </table></div>
+      </div>`;
+  }
+
+  const RENDER = { overview, experts, survey, answers, feedback, notifications };
+
+  function render() {
+    renderNav();
+    $('#view').innerHTML = `<section class="view active">${RENDER[state.view]()}</section>`;
+  }
+
+  // ---------- actions ----------
+  document.addEventListener('click', e => {
+    const t = e.target.closest('button');
+    if (!t) return;
+    const d = t.dataset;
+    if (d.go) return go(d.go);
+    if (d.tab) { state.tab = d.tab; return render(); }
+    if (d.addQ) {
+      state.survey.questions.push({ id: 'new' + Date.now(), kind: d.addQ, dimension: d.addQ === 'likert' ? 'likelihood' : undefined, text: '' });
+      render();
+      const boxes = document.querySelectorAll('[data-q]');
+      boxes[boxes.length - 1].focus();
+      return;
+    }
+    if (d.removeQ !== undefined) { state.survey.questions.splice(Number(d.removeQ), 1); return render(); }
+    if ('publish' in d) {
+      state.survey.questions = state.survey.questions.filter(q => q.text.trim());
+      state.survey.status = 'Published';
+      state.experts.forEach(x => { if (x.used) x.status = 'Responded'; });
+      render();
+      toast(`Survey published to ${state.experts.filter(x => x.used).length} experts`);
+      toast('Survey answers are now available');
+      return;
+    }
+    if (d.reviewTip) { state.tips.find(x => x.id === d.reviewTip).status = 'reviewed'; return render(); }
+    if (d.reviewComment) { state.comments.find(x => x.id === d.reviewComment).status = 'reviewed'; return render(); }
+    if (d.reply) { state.replyingTo = d.reply; render(); $('[data-reply-text]').focus(); return; }
+    if ('cancelReply' in d) { state.replyingTo = null; return render(); }
+    if (d.sendReply) {
+      const text = $('[data-reply-text]').value.trim();
+      if (!text) return;
+      Object.assign(state.tips.find(x => x.id === d.sendReply), { reply: text, status: 'reviewed' });
+      state.replyingTo = null;
+      render();
+      toast('Reply sent to the expert');
+      return;
+    }
+    if ('addExpert' in d) {
+      const n = state.experts.length + 1;
+      state.experts.push({ alias: `Invite DEMO${n}`, type: 'A', code: `DEMO${n}`, used: false, status: 'Invited', activity: 'Just now', expertise: '' });
+      render();
+      toast(`Invite code DEMO${n} created. Share it with the expert.`);
+      return;
+    }
+    if ('sendNotification' in d) {
+      const subject = $('#n-sub').value.trim();
+      const body = $('#n-body').value.trim();
+      if (!subject || !body) return toast('Add a subject and a message');
+      const audience = $('#n-aud').value;
+      const count = state.experts.filter(x => x.used && (audience === 'all' || x.type === audience)).length;
+      state.notifications.unshift({ subject, audience, count, when: 'Just now' });
+      render();
+      toast(`Notification queued for ${count} experts`);
+    }
+  });
+
+  // Survey edits are kept as the analyst types.
+  document.addEventListener('input', e => {
+    if (e.target.dataset.q !== undefined) state.survey.questions[Number(e.target.dataset.q)].text = e.target.value;
+  });
+
+  $('#riskTitle').textContent = RISK.title;
+  $('#riskTitle').title = RISK.title;
+  render();
+})();
+</script>
+</body>
+</html>
